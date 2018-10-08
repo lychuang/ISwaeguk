@@ -133,7 +133,8 @@ int main(int argc, char** argv){
 	if (current_goal > 8) {
 		break;
 	}
-		
+	drive_msg_stamped.drive.speed = 1;
+	
         /*TO DO
          * 1. make control value for steering angle using PID class. An instance is predefined as "pid_ctrl".
          * 2. publish control to racecar.
