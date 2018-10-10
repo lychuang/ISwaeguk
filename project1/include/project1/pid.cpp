@@ -12,9 +12,9 @@ PID::PID(){
 	error_sum = 0;
 	error_diff = 0;
 	// this is just to try some values and show how it is suposed to look like
-	Ki = 0;
+	Ki = 0.0;
 	Kp = 0.9;
-	Kd = 0;
+	Kd = 0.0;
 
 }
 
@@ -27,10 +27,10 @@ float PID::get_control(point car_pose, point goal_pose){
 	float angle;
 	float angle2 = atan2(ey, ex);
 
-	error_diff = (error - (angle2 - car_pose.th))/0.1;
+	error_diff = (angle2 - car_pose.th) - error;
 
 	error = angle2 - car_pose.th; 
-	error_sum = (error_sum + error)*0.1;
+	error_sum = error_sum + (error * 0.1);
 
 
 	if (error > M_PI) {
@@ -38,11 +38,25 @@ float PID::get_control(point car_pose, point goal_pose){
 	    error = error - (2 * M_PI);
 	}
 	
-printf("error %f angle %f\n\r", error, angle2);
 
-	ctrl = Kp*error + Ki*error_sum + Kd*error_diff;
+	ctrl = Kp*error + Ki * error_sum + Kd / 0.1 * error_diff;
+
+
+/*
 printf("control: %f\n\r", ctrl);
-    /* TO DO
+
+
+	if (ctrl > (M_PI / 2)) {
+
+	    ctrl = M_PI / 2;
+	}
+
+	if (ctrl < -(M_PI / 2)) {
+
+	    ctrl = -M_PI / 2;
+	}
+ */
+  /* TO DO
      *
      * implement pid algorithm
      *

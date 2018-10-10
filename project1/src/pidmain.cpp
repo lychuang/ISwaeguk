@@ -121,20 +121,24 @@ int main(int argc, char** argv){
     PID pid_ctrl;
     ackermann_msgs::AckermannDriveStamped drive_msg_stamped;
    // set a speed just so it moves
-	drive_msg_stamped.drive.speed = 1;
+	drive_msg_stamped.drive.speed = 1.5;
     // control rate, 10 Hz
     ros::Rate control_rate(10);
     while(ros::ok()){
-	drive_msg_stamped.drive.steering_angle = pid_ctrl.get_control(car_pose, path[current_goal]);
-	car_ctrl_pub.publish(drive_msg_stamped);
+	
 	if (dist(car_pose, path[current_goal]) < 0.2) {
 		current_goal++;
 	}
 	if (current_goal > 8) {
 		break;
 	}
-	drive_msg_stamped.drive.speed = 1;
+	drive_msg_stamped.drive.speed = 1.5;
+	drive_msg_stamped.drive.steering_angle = pid_ctrl.get_control(car_pose, path[current_goal]);
 	
+        printf("steering angle %f\n\r", drive_msg_stamped.drive.steering_angle);
+        car_ctrl_pub.publish(drive_msg_stamped);
+
+
         /*TO DO
          * 1. make control value for steering angle using PID class. An instance is predefined as "pid_ctrl".
          * 2. publish control to racecar.
