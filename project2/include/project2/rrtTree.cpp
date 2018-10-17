@@ -166,7 +166,16 @@ void rrtTree::visualizeTree(std::vector<traj> path){
 }
 
 void rrtTree::addVertex(point x_new, point x_rand, int idx_near, double alpha, double d) {
-    //TODO
+ 	new_vertex = new node;
+	ptrTable[count] = new_vertex;
+   	new_vertex->idx = count;
+    	new_vertex->idx_parent = 0;
+    	new_vertex->location = x_new;
+    	new_vertex->rand = x_rand; 
+	new_vertex -> alpha = alpha;
+	new_vertex -> d = d;
+
+	count++;	
 }
 
 int rrtTree::generateRRT(double x_max, double x_min, double y_max, double y_min, int K, double MaxStep) {
@@ -174,23 +183,78 @@ int rrtTree::generateRRT(double x_max, double x_min, double y_max, double y_min,
 }
 
 point rrtTree::randomState(double x_max, double x_min, double y_max, double y_min) {
-    //TODO
+    point p;
+    srand(time(NULL));
+    p.x = (rand() % (x_max - x_min)) + x_min;
+    p.y = (rand() % (y_max - y_min)) + y_min;
+    return p;
+}
+double th_max(double MaxStep) {
+	// this is problebly not right.
+	return MaxStep * L / tan(max_alpha);
 }
 
 int rrtTree::nearestNeighbor(point x_rand, double MaxStep) {
-    //TODO
+    th1 = rc.location.th - atan2(x_rand, rc.location);
+    double length = 10000;
+	int index = NULL;
+   	 for (int i = 0; i <= count; i++) {
+		th2 = th1 - atan(prtTable[i].location, x_rand);
+		if (point.dist(x_rand, ptrTable[i].location) < length ) {
+			lenght = point.dist(x_rand, ptrTable[i] -> location);
+			index = prtTable[i].idx;
+		}
+	}
 }
 
 int rrtTree::nearestNeighbor(point x_rand) {
-    //TODO
+	double length = 10000;
+	int index = NULL;
+   	 for (int i = 0; i <= count; i++) {
+		if (point.dist(x_rand, ptrTable[i].location) < length) {
+			lenght = dist(x_rand, ptrTable[i] -> location);
+			index = prtTable[i].idx;
+		}
+	}
+}
+
+double rrtTree::dist(point p1, point p2) {
+	return sqrt(pow((p1.x - p2.x), 2) + pow((p1.y - p2.y), 2));
 }
 
 int rrtTree::randompath(double *out, point x_near, point x_rand, double MaxStep) {
-    //TODO
+	int next_node = nearestNeighbor(x_near, MaxStep);
+	out[0] = prtTable[next_node].location.x;
+	out[1] = prtTable[next_node].location.y;
+	out[2] = prtTable[next_node].location.x;
+	out[3] = prtTable[next_node].alpha;
+	out[4] = prtTable[next_node].d;
+	if (isCollision(x_near, prtTable[next_node].location) {
+	return 1;
+	}
+	return 0;
 }
 
-bool rrtTree::isCollision(point x1, point x2, double d, double R) {
-    //TODO
+bool rrtTree::isCollision(point x1, point x2, double d, double a) {
+// am not 100% sure that these ecuations are right?
+	double th = x1.th;
+	double R = L/tan(a);
+  	double B = d/R;
+	double x = x1;
+	double xc = x1.x + R*sin(th);
+	double yc = y1.x + R*cos(th);
+	while(dist(x, x2) < 0.01){
+		x' = xc + R*sin(th + B);
+		y' = yc + R*cos(th + B);
+		th' = th + B;
+		th = th + th';
+		x.x = x + x';
+		x.y = y + y';
+		if (map_margin.at<uchar>(x.x, x.y) == 0) {
+		return true;
+		}
+	}
+	return false;
 }
 
 std::vector<traj> rrtTree::backtracking_traj(){

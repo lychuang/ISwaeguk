@@ -40,11 +40,11 @@ private:
     void addVertex(point x_new, point x_rand, int idx_near, double alpha, double d);
     int nearestNeighbor(point x_rand, double MaxStep);
     int nearestNeighbor(point x_rand);
-    bool isCollision(point x1, point x2, double d, double R);
+    bool isCollision(point x1, point x2, double d, double a);
     point randomState(double x_max, double x_min, double y_max, double y_min);
     point newState(int idx_near, point x_rand, double MaxStep);
     int randompath(double *out, point x_near, point x_rand, double MaxStep);
-
+    dist(point p1, point p2);
 public:
     rrtTree();
     rrtTree(point x_init, point x_goal, cv::Mat map, double map_origin_x, double map_origin_y, double res, int margin);

@@ -4,3 +4,5 @@ struct point{
 	double y;
 	double th;
 };
+
+

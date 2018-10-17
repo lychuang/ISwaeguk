@@ -27,11 +27,26 @@ void PID::reset() {
 }
 
 float PID::get_control(point car_pose, point goal_pose){
+// copied are last algoritem and pasted it hear
+    float ctrl;
+	float ex = goal_pose.x - car_pose.x;
+	float ey = goal_pose.y - car_pose.y;
 
-    /* TO DO
-     *
-     * implement pid algorithm
-     *
-    */
+	float angle;
+	float angle2 = atan2(ey, ex);
+
+	error_diff = (angle2 - car_pose.th) - error;
+
+	error = angle2 - car_pose.th; 
+	error_sum = error_sum + (error * 0.1);
+
+
+	if (error > M_PI) {
+
+	    error = error - (2 * M_PI);
+	}
+	
+
+	ctrl = Kp*error + Ki * error_sum + Kd / 0.1 * error_diff;
     
 }
