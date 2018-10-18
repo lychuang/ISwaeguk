@@ -106,6 +106,10 @@ int main(int argc, char** argv){
     state = INIT;
     bool running = true;
     int look_ahead_idx;
+
+    //RUNNING State
+    point current_point;
+
     ros::Rate control_rate(60);
 
     while(running){
@@ -230,24 +234,52 @@ int main(int argc, char** argv){
             ros::Rate(0.33).sleep();
 
             printf("Initialize ROBOT\n");
-            state = RUNNING;
+            
+	    //initialise the first path point as current point to pursue
+            current_point = path_RRT[0];
+	    state = RUNNING;
         } break;
 
         case RUNNING: {
         // 1.
+	    //This will state loop continuously until we reach the goal
+
+	    //we retrieve the next steering angle
+	    setcmdvel(1, pid_ctrl.get_control(robot_pose, current_point));
+
+	    //publish it to robot
+	    //it seems like the struct variable  we are publishing is cmd?
+            cmd_vel_pub.publish(cmd);
+
+
+
+/*
             point current;
+
             for (int i = 0; i <= path_RRT.size(); i++){
                 current = path_RRT[i];
                 setcmdvet(1, pid_ctrl.get_controler(robot_pose, current));
             }
                  cmd_vel_pub.pub(AckermannDriveStamped)
-                 
-                 if(sqrt(pow((robot_pose.x - waypoints[look_ahead_idx].x), 2) + pow((robot_pose.y - waypoints[look_ahead_idx].y), 2)) < 0.2) {
-                     look_ahead_idx++;
-                 }
-                 if (look_ahead_idx >= waypoints.size(){
-                     state = FINISH;
-                 }
+  */               
+
+	
+	    //when the magnitude of vector between robot and point is < threshold
+	    //move on to next point
+	    if(sqrt(pow((robot_pose.x - waypoints[look_ahead_idx].x), 2)
+			 + pow((robot_pose.y - waypoints[look_ahead_idx].y), 2)) < 0.2) {
+                     
+		look_ahead_idx++; //increment index
+		current_point = path_RRT[look_ahead_idx]; //increment current point 
+            }
+            
+	    //no more points in path - reached GOAL!     
+	    if (look_ahead_idx >= waypoints.size(){
+                
+                state = FINISH; //update FSM to finished
+            }
+
+
 	    //TODO
 	    /*
 		1. make control following point in the variable "path_RRT"
@@ -280,10 +312,13 @@ int main(int argc, char** argv){
 void generate_path_RRT(){
     std::vector<traj> one_path;
     for (i = 0; i < size(waypoints); i++) {
+
         rrtTree(waypoints[i], waypoints[i+1], map, map_origin_x, map_origin_y, res, margin);
         generateRRT(world_x_max, world_x_min, world_y_max, world_y_min, K, MaxStep);
-	one_paht = backtracking_traj();
-        for (j = one_path.size()-1; j >= 0; j--;) {
+
+	one_path = backtracking_traj();
+
+        for (j = one_path.size() - 1; j >= 0; j--) {
             path_RRT.push_back(one_path[j]);
         }
     }
