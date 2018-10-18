@@ -48,5 +48,5 @@ float PID::get_control(point car_pose, point goal_pose){
 	
 
 	ctrl = Kp*error + Ki * error_sum + Kd / 0.1 * error_diff;
-    
+    return ctrl;
 }
