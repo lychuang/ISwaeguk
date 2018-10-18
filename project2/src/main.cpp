@@ -281,7 +281,8 @@ void generate_path_RRT(){
     std::vector<traj> one_path;
     for (i = 0; i < size(waypoints); i++) {
         rrtTree(waypoints[i], waypoints[i+1], map, map_origin_x, map_origin_y, res, margin);
-        one_path = generateRRT(world_x_max, world_x_min, world_y_max, world_y_min, K, MaxStep);
+        generateRRT(world_x_max, world_x_min, world_y_max, world_y_min, K, MaxStep);
+	one_paht = backtracking_traj();
         for (j = one_path.size()-1; j >= 0; j--;) {
             path_RRT.push_back(one_path[j]);
         }

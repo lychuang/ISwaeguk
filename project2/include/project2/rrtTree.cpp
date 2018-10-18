@@ -166,12 +166,12 @@ void rrtTree::visualizeTree(std::vector<traj> path){
 }
 
 void rrtTree::addVertex(point x_new, point x_rand, int idx_near, double alpha, double d) {
- 	new_vertex = new node;
+ 	node* new_vertex = new node();
 	ptrTable[count] = new_vertex;
-   	new_vertex->idx = count;
-    	new_vertex->idx_parent = idx_near;
-    	new_vertex->location = x_new;
-    	new_vertex->rand = x_rand; 
+   	new_vertex -> idx = count;
+    	new_vertex -> idx_parent = idx_near;
+    	new_vertex -> location = x_new;
+    	new_vertex -> rand = x_rand; 
 	new_vertex -> alpha = alpha;
 	new_vertex -> d = d;
 
@@ -183,12 +183,12 @@ int rrtTree::generateRRT(double x_max, double x_min, double y_max, double y_min,
     point x_new;
     int x_near;
     int node;
-    int out[5];
+    double *out = new double[5];
     int isCollision;
     for(int i; i <= K; i++) {
         x_rand = randomState(x_max, x_min, y_max, y_min);
         x_near = nearestNeighbor(x_rand, MaxStep);
-        isCollision = newState(out, x_near -> location, x_rand, MaxStep);
+        isCollision = newState(out, ptrTable[x_near] -> location, x_rand, MaxStep);
         x_new.x = out[0];
         x_new.y = out[1];
         x_new.th = out[2];
@@ -196,7 +196,7 @@ int rrtTree::generateRRT(double x_max, double x_min, double y_max, double y_min,
             addVertex(x_new, x_rand, x_near, out[3], out[4]);
         }
     }
-    return backtracking_traj();
+    return 0;
 }
 
 point rrtTree::randomState(double x_max, double x_min, double y_max, double y_min) {
@@ -212,10 +212,10 @@ int rrtTree::nearestNeighbor(point x_rand, double MaxStep) {
     double length = 10000;
 	int index = NULL;
    	 for (int i = 0; i <= count; i++) {
-		th2 = th1 - atan(prtTable[i].location, x_rand);
-		if (point.dist(x_rand, ptrTable[i].location) < length && ptrTable[i].location.th - atan2(ptrTable[i].location, x_rand) < max_th && ptrTable[i].location.th - atan2(ptrTable[i].location, x_rand) > -max_th) {
+
+		if (point.dist(x_rand, ptrTable[i] -> location) < length && ptrTable[i].location.th - atan2(ptrTable[i].location, x_rand) < max_th && ptrTable[i] -> location.th - atan2(ptrTable[i].location, x_rand) > -max_th) {
 			lenght = point.dist(x_rand, ptrTable[i] -> location);
-			index = prtTable[i].idx;
+			index = prtTable[i] -> idx;
 		}
 	}
     return index;

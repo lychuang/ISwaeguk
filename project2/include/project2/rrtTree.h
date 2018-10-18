@@ -43,8 +43,8 @@ private:
     bool isCollision(point x1, point x2, double d, double a);
     point randomState(double x_max, double x_min, double y_max, double y_min);
     point newState(int idx_near, point x_rand, double MaxStep);
-    int randompath(double *out, point x_near, point x_rand, double MaxStep);
-    dist(point p1, point p2);
+    int newState(double *out, point x_near, point x_rand, double MaxStep);
+    double dist(point p1, point p2);
 public:
     rrtTree();
     rrtTree(point x_init, point x_goal, cv::Mat map, double map_origin_x, double map_origin_y, double res, int margin);
