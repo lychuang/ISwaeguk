@@ -234,6 +234,20 @@ int main(int argc, char** argv){
         } break;
 
         case RUNNING: {
+        // 1.
+            point current;
+            for (int i = 0; i <= path_RRT.size(); i++){
+                current = path_RRT[i];
+                setcmdvet(1, pid_ctrl.get_controler(robot_pose, current));
+            }
+                 cmd_vel_pub.pub(AckermannDriveStamped)
+                 
+                 if(sqrt(pow((robot_pose.x - waypoints[look_ahead_idx].x), 2) + pow((robot_pose.y - waypoints[look_ahead_idx].y), 2)) < 0.2) {
+                     look_ahead_idx++;
+                 }
+                 if (look_ahead_idx >= waypoints.size(){
+                     state = FINISH;
+                 }
 	    //TODO
 	    /*
 		1. make control following point in the variable "path_RRT"
@@ -263,8 +277,15 @@ int main(int argc, char** argv){
     return 0;
 }
 
-void generate_path_RRT()
-{
+void generate_path_RRT(){
+    std::vector<traj> one_path;
+    for (i = 0; i < size(waypoints); i++) {
+        rrtTree(waypoints[i], waypoints[i+1], map, map_origin_x, map_origin_y, res, margin);
+        one_path = generateRRT(world_x_max, world_x_min, world_y_max, world_y_min, K, MaxStep);
+        for (j = one_path.size()-1; j >= 0; j--;) {
+            path_RRT.push_back(one_path[j]);
+        }
+    }
     /*
      * 1. for loop
      * 2.  call RRT generate function in order to make a path which connects i way point to i+1 way point.
