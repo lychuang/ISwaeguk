@@ -178,68 +178,93 @@ void rrtTree::addVertex(point x_new, point x_rand, int idx_near, double alpha, d
 	count++;	
 }
 
+
+
+
+
+
 int rrtTree::generateRRT(double x_max, double x_min, double y_max, double y_min, int K, double MaxStep) {
     point x_rand;
     point x_new;
 
     int x_near;
     int node;
-    double *out = new double[5];////
-    int isCollision;
+    double* out = new double[5];
+    int noCollision;
 
     for (int i; i <= K; i++) {
 
         x_rand = randomState(x_max, x_min, y_max, y_min);
         x_near = nearestNeighbor(x_rand, MaxStep);
-        isCollision = newState(out, ptrTable[x_near] -> location, x_rand, MaxStep);
+        noCollision = newState(out, ptrTable[x_near] -> location, x_rand, MaxStep);
         x_new.x = out[0];
         x_new.y = out[1];
         x_new.th = out[2];
         
-	if (!isCollision) {
+	if (noCollision) {
             addVertex(x_new, x_rand, x_near, out[3], out[4]);
         }
     }
     return 0;
 }
 
+
+
 point rrtTree::randomState(double x_max, double x_min, double y_max, double y_min) {
     point p;
     srand(time(NULL)); // this might not be random but fix that later.
+
     p.x = (rand() % (x_max - x_min)) + x_min;
     p.y = (rand() % (y_max - y_min)) + y_min;
     return p;
 }
 
+
+
+
 int rrtTree::nearestNeighbor(point x_rand, double MaxStep) {
     double max_th = MaxStep * tan(max_alpha)/L; // if MaxStep is the greatest d can be it should be something like this. and if max_th is the biggest diffrens in th possible.
     double length = 10000;
-	int index = NULL;
-   	 for (int i = 0; i <= count; i++) {
+    int index = NULL;
 
-		if (point.dist(x_rand, ptrTable[i] -> location) < length && ptrTable[i].location.th - atan2(ptrTable[i].location, x_rand) < max_th && ptrTable[i] -> location.th - atan2(ptrTable[i].location, x_rand) > -max_th) {
-			lenght = point.dist(x_rand, ptrTable[i] -> location);
-			index = prtTable[i] -> idx;
-		}
+    for (int i = 0; i <= count; i++) {
+
+	double distance = (point.dist(x_rand, ptrTable[i] -> location);
+	if ((distance < length) 
+	        && ((ptrTable[i].location.th - atan2(ptrTable[i].location, x_rand)) < max_th) 
+		&& ((ptrTable[i] -> location.th - atan2(ptrTable[i].location, x_rand)) > -max_th)) {
+			
+	    length = distance;
+	    index = prtTable[i] -> idx;
 	}
+    }
     return index;
 }
 
 int rrtTree::nearestNeighbor(point x_rand) {
-	double length = 10000;
-	int index = NULL;
-   	 for (int i = 0; i <= count; i++) {
-		if (point.dist(x_rand, ptrTable[i].location) < length) {
-			lenght = dist(x_rand, ptrTable[i] -> location);
-			index = prtTable[i].idx;
-		}
+    double length = 10000;
+    int index = NULL;
+
+    for (int i = 0; i <= count; i++) {
+
+	double distance = point.dist(x_rand, ptrTable[i].location);
+
+	if (distance < length) {
+	    length = distance; 
+	    index = prtTable[i].idx;
 	}
+    }
     return index;
 }
 
+
+
+//private function for calculating distance between 2 points
 double rrtTree::dist(point p1, point p2) {
 	return sqrt(pow((p1.x - p2.x), 2) + pow((p1.y - p2.y), 2));
 }
+
+
 
 
 //return 1 if there is no collision and new state is valid
@@ -272,31 +297,38 @@ int rrtTree::newState(double *out, point x_near, point x_rand, double MaxStep) {
 
 
 //returns true if collision
-//false if not
+//false if noti
+//params: points x1->x2 origin->goal
+//        d = 
+
 bool rrtTree::isCollision(point x1, point x2, double d, double a) {
 // am not 100% sure that these ecuations are right?
-	double th = x1.th;
-	double R = L/tan(a);
-  	double B = d/R;
-	double x = x1;
-	double xc = x1.x - R*sin(th);
-	double yc = y1.x + R*cos(th);
+    double th = x1.th;
+    double R = L/tan(a);
+    double B = d/R;
+    point x = x1;
+    double xc = x1.x - R*sin(th);
+    double yc = y1.x + R*cos(th);
     double xp;
     double yp;
     double thp;
-	while(dist(x, x2) < 0.01){
+	
+    //////////////////////////////////////
+    while(dist(x, x2) < 0.01){
         th = th + B;
-		x.x = xc + R*sin(th + B);
-		x.y = yc - R*cos(th + B);
-		if (map_margin.at<uchar>(x.x, x.y) == 0) {
-		return true;
-		}
+	x.x = xc + R*sin(th + B);
+	x.y = yc - R*cos(th + B);
+
+	if (map_margin.at<uchar>(x.x, x.y) == 0) {
+	    return true;
 	}
-	return false;
+    }
+	
+    return false;
 }
 
 std::vector<traj> rrtTree::backtracking_traj(){
-   int tracked_node = nearestNeighbor(x_goal);
+    int tracked_node = nearestNeighbor(x_goal);
     traj path_info;
     std::vector<traj> path;
     while (tracked_node > 0) {
@@ -304,7 +336,7 @@ std::vector<traj> rrtTree::backtracking_traj(){
         path_info.x = prtTable[tracked_node].location.x;
         path_info.y = prtTable[tracked_node].location.y;
         path_info.th = prtTable[tracked_node].location.th;
-        path_info.th = prtTable[tracked_node].alpha;
+        path_info.alpha = prtTable[tracked_node].alpha;
         path_info.d = prtTable[tracked_node].d;
         tracked_node = ptrTable[tracked_node].idx_parent;
         path.push_back(path_info);
