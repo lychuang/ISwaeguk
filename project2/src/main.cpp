@@ -108,7 +108,7 @@ int main(int argc, char** argv){
     int look_ahead_idx;
 
     //RUNNING State
-    point current_point;
+    traj current_point;
 
     ros::Rate control_rate(60);
 
@@ -266,15 +266,15 @@ int main(int argc, char** argv){
 	
 	    //when the magnitude of vector between robot and point is < threshold
 	    //move on to next point
-	    if(sqrt(pow((robot_pose.x - waypoints[look_ahead_idx].x), 2)
-			 + pow((robot_pose.y - waypoints[look_ahead_idx].y), 2)) < 0.2) {
+	    if(sqrt(pow((robot_pose.x - path_RRT[look_ahead_idx].x), 2)
+			 + pow((robot_pose.y - path_RRT[look_ahead_idx].y), 2)) < 0.2) {
                      
 		look_ahead_idx++; //increment index
 		current_point = path_RRT[look_ahead_idx]; //increment current point 
             }
             
 	    //no more points in path - reached GOAL!     
-	    if (look_ahead_idx >= waypoints.size(){
+	    if (look_ahead_idx >= path_RRT.size(){
                 
                 state = FINISH; //update FSM to finished
             }

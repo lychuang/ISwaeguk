@@ -166,7 +166,7 @@ void rrtTree::visualizeTree(std::vector<traj> path){
 }
 
 void rrtTree::addVertex(point x_new, point x_rand, int idx_near, double alpha, double d) {
- 	node* new_vertex = new node();
+ 	node* new_vertex = new node;
 	ptrTable[count] = new_vertex;
    	new_vertex -> idx = count;
     	new_vertex -> idx_parent = idx_near;
@@ -181,18 +181,22 @@ void rrtTree::addVertex(point x_new, point x_rand, int idx_near, double alpha, d
 int rrtTree::generateRRT(double x_max, double x_min, double y_max, double y_min, int K, double MaxStep) {
     point x_rand;
     point x_new;
+
     int x_near;
     int node;
-    double *out = new double[5];
+    double *out = new double[5];////
     int isCollision;
-    for(int i; i <= K; i++) {
+
+    for (int i; i <= K; i++) {
+
         x_rand = randomState(x_max, x_min, y_max, y_min);
         x_near = nearestNeighbor(x_rand, MaxStep);
         isCollision = newState(out, ptrTable[x_near] -> location, x_rand, MaxStep);
         x_new.x = out[0];
         x_new.y = out[1];
         x_new.th = out[2];
-        if (isCollision == 0) {
+        
+	if (!isCollision) {
             addVertex(x_new, x_rand, x_near, out[3], out[4]);
         }
     }
@@ -237,6 +241,9 @@ double rrtTree::dist(point p1, point p2) {
 	return sqrt(pow((p1.x - p2.x), 2) + pow((p1.y - p2.y), 2));
 }
 
+
+//return 1 if there is no collision and new state is valid
+//return 0 if there is a collision - invalid new state
 int rrtTree::newState(double *out, point x_near, point x_rand, double MaxStep) {
     double xc = (2*x_near.x - cos(x_near.th))/2;
     double yc = (2*x_near.y - sin(x_near.th))/2;
@@ -253,12 +260,19 @@ int rrtTree::newState(double *out, point x_near, point x_rand, double MaxStep) {
     out[2] = x_new.th;
     out[3] = alpha;
     out[4] = d;
-	if (isCollision(x_near, x_new, d, alpha) {
-	return 1;
-	}
+
+    //if there is a collision return 0
+    if (isCollision(x_near, x_new, d, alpha)) {
 	return 0;
+    }
+
+    //valid new state
+    return 1;
 }
 
+
+//returns true if collision
+//false if not
 bool rrtTree::isCollision(point x1, point x2, double d, double a) {
 // am not 100% sure that these ecuations are right?
 	double th = x1.th;
