@@ -170,12 +170,16 @@ void rrtTree::visualizeTree(std::vector<traj> path){
 
 
 void rrtTree::addVertex(point x_new, point x_rand, int idx_near, double alpha, double d) {
+
+	point xNew = x_new;
+	point xRand = x_rand;
+
  	node* new_vertex = new node;
 	ptrTable[count] = new_vertex;
    	new_vertex -> idx = count;
     	new_vertex -> idx_parent = idx_near;
-    	new_vertex -> location = x_new;
-    	new_vertex -> rand = x_rand; 
+    	new_vertex -> location = xNew;
+    	new_vertex -> rand = xRand; 
 	new_vertex -> alpha = alpha;
 	new_vertex -> d = d;
 
@@ -188,9 +192,9 @@ void rrtTree::addVertex(point x_new, point x_rand, int idx_near, double alpha, d
 
 
 int rrtTree::generateRRT(double x_max, double x_min, double y_max, double y_min, int K, double MaxStep) {
+
     point x_rand;
     point x_new;
-
     int x_near;
     int node;
     double* out = new double[5];
@@ -199,8 +203,10 @@ int rrtTree::generateRRT(double x_max, double x_min, double y_max, double y_min,
     for (int i; i <= K; i++) {
 
         x_rand = randomState(x_max, x_min, y_max, y_min);
+
         x_near = nearestNeighbor(x_rand, MaxStep);
         noCollision = newState(out, ptrTable[x_near] -> location, x_rand, MaxStep);
+
         x_new.x = out[0];
         x_new.y = out[1];
         x_new.th = out[2];
@@ -231,7 +237,7 @@ int rrtTree::nearestNeighbor(point x_rand, double MaxStep) {
     double length = 10000;
     int index;
 
-    for (int i = 0; i <= count; i++) {
+    for (int i = 0; i < count; i++) {
 
 	//the angle to x_rand from car's current direction
 	double theta_rand = atan2(ptrTable[i]->location.y - x_rand.y
@@ -250,10 +256,11 @@ int rrtTree::nearestNeighbor(point x_rand, double MaxStep) {
 }
 
 int rrtTree::nearestNeighbor(point x_rand) {
+
     double length = 10000;
     int index;
 
-    for (int i = 0; i <= count; i++) {
+    for (int i = 0; i < count; i++) {
 
 	double distance = dist(x_rand, ptrTable[i]->location);
 
@@ -349,4 +356,6 @@ std::vector<traj> rrtTree::backtracking_traj(){
         tracked_node = ptrTable[tracked_node]->idx_parent;
         path.push_back(path_info);
     }
+
+    return path;
 }

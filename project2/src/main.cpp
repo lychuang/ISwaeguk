@@ -324,12 +324,22 @@ void generate_path_RRT(){
 	//create the rrtTree for the next goal
         rrtTree tree (waypoints[i], waypoints[i+1], map, map_origin_x, map_origin_y, res, margin);
         tree.generateRRT(world_x_max, world_x_min, world_y_max, world_y_min, K, MaxStep);
-
 	//generate the path, store it
 	one_path = tree.backtracking_traj();
+	//add this path to the overall path
 
-	//add this path to the overall path 
+///////////////////////////////////////
+///
+//
+//
+// We are not getting many points in path_RRT - like 1 or 2 for each waypoint?
+// CHeck generateRRT and backtracking_traj for algorithm!!!!
+//
+///////////////////////////////////////
+
+printf("onepathsize = %d\n\r", static_cast<int>(one_path.size())); 
         for (int j = static_cast<int>(one_path.size()) - 1; j >= 0; j--) {
+
             path_RRT.push_back(one_path[j]);
         }
     }
