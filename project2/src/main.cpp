@@ -46,6 +46,9 @@ std::vector<traj> path_RRT;
 
 //robot
 point robot_pose;
+
+PID pid_ctrl;
+
 ackermann_msgs::AckermannDriveStamped cmd;
 gazebo_msgs::ModelStatesConstPtr model_states;
 
@@ -245,7 +248,9 @@ int main(int argc, char** argv){
 	    //This will state loop continuously until we reach the goal
 
 	    //we retrieve the next steering angle
-	    setcmdvel(1, pid_ctrl.get_control(robot_pose, current_point));
+
+	    point curr_point = {current_point.x, current_point.y, current_point.th};
+	    setcmdvel(1, pid_ctrl.get_control(robot_pose, curr_point));
 
 	    //publish it to robot
 	    //it seems like the struct variable  we are publishing is cmd?
@@ -261,7 +266,7 @@ int main(int argc, char** argv){
                 setcmdvet(1, pid_ctrl.get_controler(robot_pose, current));
             }
                  cmd_vel_pub.pub(AckermannDriveStamped)
-  */               
+  *ptrTable[i]->location.y - x_rand.y*/ 
 
 	
 	    //when the magnitude of vector between robot and point is < threshold
@@ -274,7 +279,7 @@ int main(int argc, char** argv){
             }
             
 	    //no more points in path - reached GOAL!     
-	    if (look_ahead_idx >= path_RRT.size(){
+	    if (look_ahead_idx >= path_RRT.size()) {
                 
                 state = FINISH; //update FSM to finished
             }
@@ -310,15 +315,21 @@ int main(int argc, char** argv){
 }
 
 void generate_path_RRT(){
+
     std::vector<traj> one_path;
-    for (i = 0; i < size(waypoints); i++) {
 
-        rrtTree(waypoints[i], waypoints[i+1], map, map_origin_x, map_origin_y, res, margin);
-        generateRRT(world_x_max, world_x_min, world_y_max, world_y_min, K, MaxStep);
+    for (int i = 0; i < static_cast<int>(waypoints.size()); i++) {
 
-	one_path = backtracking_traj();
+	//instance of rrtTree class for each iteration
+	//create the rrtTree for the next goal
+        rrtTree tree (waypoints[i], waypoints[i+1], map, map_origin_x, map_origin_y, res, margin);
+        tree.generateRRT(world_x_max, world_x_min, world_y_max, world_y_min, K, MaxStep);
 
-        for (j = one_path.size() - 1; j >= 0; j--) {
+	//generate the path, store it
+	one_path = tree.backtracking_traj();
+
+	//add this path to the overall path 
+        for (int j = static_cast<int>(one_path.size()) - 1; j >= 0; j--) {
             path_RRT.push_back(one_path[j]);
         }
     }

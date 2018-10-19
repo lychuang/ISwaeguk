@@ -165,6 +165,10 @@ void rrtTree::visualizeTree(std::vector<traj> path){
     cv::waitKey(1);
 }
 
+
+
+
+
 void rrtTree::addVertex(point x_new, point x_rand, int idx_near, double alpha, double d) {
  	node* new_vertex = new node;
 	ptrTable[count] = new_vertex;
@@ -214,8 +218,8 @@ point rrtTree::randomState(double x_max, double x_min, double y_max, double y_mi
     point p;
     srand(time(NULL)); // this might not be random but fix that later.
 
-    p.x = (rand() % (x_max - x_min)) + x_min;
-    p.y = (rand() % (y_max - y_min)) + y_min;
+    p.x = (x_max - x_min) * ((double)rand() / (double)RAND_MAX) + x_min;
+    p.y = (y_max - y_min) * ((double)rand() / (double)RAND_MAX) + y_min;
     return p;
 }
 
@@ -225,33 +229,37 @@ point rrtTree::randomState(double x_max, double x_min, double y_max, double y_mi
 int rrtTree::nearestNeighbor(point x_rand, double MaxStep) {
     double max_th = MaxStep * tan(max_alpha)/L; // if MaxStep is the greatest d can be it should be something like this. and if max_th is the biggest diffrens in th possible.
     double length = 10000;
-    int index = NULL;
+    int index;
 
     for (int i = 0; i <= count; i++) {
 
-	double distance = (point.dist(x_rand, ptrTable[i] -> location);
-	if ((distance < length) 
-	        && ((ptrTable[i].location.th - atan2(ptrTable[i].location, x_rand)) < max_th) 
-		&& ((ptrTable[i] -> location.th - atan2(ptrTable[i].location, x_rand)) > -max_th)) {
-			
+	//the angle to x_rand from car's current direction
+	double theta_rand = atan2(ptrTable[i]->location.y - x_rand.y
+					, ptrTable[i]->location.x - x_rand.x);
+	double distance = dist(x_rand, ptrTable[i] -> location);
+	
+	if ((distance < length) && ((ptrTable[i]->location.th - theta_rand) < max_th) 
+		&& ((ptrTable[i]->location.th - theta_rand) > -max_th)) {
+
 	    length = distance;
-	    index = prtTable[i] -> idx;
+	    index = ptrTable[i] -> idx;
 	}
     }
+
     return index;
 }
 
 int rrtTree::nearestNeighbor(point x_rand) {
     double length = 10000;
-    int index = NULL;
+    int index;
 
     for (int i = 0; i <= count; i++) {
 
-	double distance = point.dist(x_rand, ptrTable[i].location);
+	double distance = dist(x_rand, ptrTable[i]->location);
 
 	if (distance < length) {
 	    length = distance; 
-	    index = prtTable[i].idx;
+	    index = ptrTable[i]->idx;
 	}
     }
     return index;
@@ -273,7 +281,7 @@ int rrtTree::newState(double *out, point x_near, point x_rand, double MaxStep) {
     double xc = (2*x_near.x - cos(x_near.th))/2;
     double yc = (2*x_near.y - sin(x_near.th))/2;
     double R = sqrt(pow(xc - x_near.x, 2) + pow(yc - x_near.y, 2));
-    double alpha = atan(L/R)
+    double alpha = atan(L/R);
     double d = MaxStep*0.9; //am not sure if we can calculate d or not
     double B = d/R;
     point x_new;
@@ -308,7 +316,7 @@ bool rrtTree::isCollision(point x1, point x2, double d, double a) {
     double B = d/R;
     point x = x1;
     double xc = x1.x - R*sin(th);
-    double yc = y1.x + R*cos(th);
+    double yc = x1.y + R*cos(th);
     double xp;
     double yp;
     double thp;
@@ -319,7 +327,7 @@ bool rrtTree::isCollision(point x1, point x2, double d, double a) {
 	x.x = xc + R*sin(th + B);
 	x.y = yc - R*cos(th + B);
 
-	if (map_margin.at<uchar>(x.x, x.y) == 0) {
+	if (this->map.at<uchar>(x.x, x.y) == 0) {
 	    return true;
 	}
     }
@@ -332,13 +340,13 @@ std::vector<traj> rrtTree::backtracking_traj(){
     traj path_info;
     std::vector<traj> path;
     while (tracked_node > 0) {
-        traj path_info = new traj;
-        path_info.x = prtTable[tracked_node].location.x;
-        path_info.y = prtTable[tracked_node].location.y;
-        path_info.th = prtTable[tracked_node].location.th;
-        path_info.alpha = prtTable[tracked_node].alpha;
-        path_info.d = prtTable[tracked_node].d;
-        tracked_node = ptrTable[tracked_node].idx_parent;
+        //traj path_info = new traj;
+        path_info.x = ptrTable[tracked_node]->location.x;
+        path_info.y = ptrTable[tracked_node]->location.y;
+        path_info.th = ptrTable[tracked_node]->location.th;
+        path_info.alpha = ptrTable[tracked_node]->alpha;
+        path_info.d = ptrTable[tracked_node]->d;
+        tracked_node = ptrTable[tracked_node]->idx_parent;
         path.push_back(path_info);
     }
 }
