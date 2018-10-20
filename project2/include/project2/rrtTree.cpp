@@ -173,7 +173,6 @@ void rrtTree::addVertex(point x_new, point x_rand, int idx_near, double alpha, d
 
 	point xNew = x_new;
 	point xRand = x_rand;
-	printf("parent idx = %d\r\n", idx_near);
  	node* new_vertex = new node;
 	ptrTable[count] = new_vertex;
    	new_vertex -> idx = count;
@@ -285,10 +284,11 @@ double rrtTree::dist(point p1, point p2) {
 int rrtTree::newState(double *out, point x_near, point x_rand, double MaxStep) {
 
     //store the shortest distance & the corresponding point
-    double shortest_dist = 0;
+    double shortest_dist = 10000;
     point x_best;
     double alph_best;
     double d_best;
+	x_best.x = 10000;
 
 //generate many potential points & store the closest one to x_rand
     for (int i = 0; i < 21; i++) {
@@ -312,18 +312,21 @@ int rrtTree::newState(double *out, point x_near, point x_rand, double MaxStep) {
     x_new.x = xc + R*sin(x_near.th + beta);
     x_new.y = yc - R*cos(x_near.th + beta);
     x_new.th = x_near.th + beta;
-    printf("x_new.x = %f\r\n", x_new.x);
 
 	    
 	    //if there is no collision we can then compute dist to x_rand
 	    if (!isCollision(x_near, x_new, d, alph)) {
 		
 		double distance = dist(x_new, x_rand);
-		if (shortest_dist == 0) {
+		if (distance == 0) {
 		    
 		    shortest_dist = distance;
 		    x_best = x_new;
+		d_best = d;
+			alph_best = alph;
                 } else if (shortest_dist > distance) {
+			alph_best = alph;
+			d_best = d;
 	
 		    shortest_dist = distance;
 		    x_best = x_new;
@@ -334,14 +337,16 @@ int rrtTree::newState(double *out, point x_near, point x_rand, double MaxStep) {
 
     } 
 
-
+	
     //before returning -> assign the out array values
     out[0] = x_best.x;
     out[1] = x_best.y;
     out[2] = x_best.th;
     out[3] = alph_best;
     out[4] = d_best;
-
+	if (x_best.x == 10000) {
+	return 0;
+} 
     return 1;//I might change this later since the spec is dumb
 
 //OLD CODE
@@ -387,20 +392,21 @@ bool rrtTree::isCollision(point x_near, point x_rand, double d, double a) {
     double R = L/tan(a);
     double B = d/R;
     point x = x_near;
-    double yc = (pow((tan(x_near.th)*x_near.y), 2) + pow(x_near.y, 2) - pow((x_rand.x - x_near.x - x_near.y*tan(x_near.th)), 2) + pow(x_rand.y, 2))/(2*tan(x_near.th)*(x_rand.x-x_near.x - x_near.y*tan(x_near.th)) - 2*x_rand.y + 2*x_near.y*tan(x_near.th)-2*x_near.y);
-    double xc = x_near.x+(x_near.y - yc)*tan(x_near.th);
+    double xc = x_near.x - R * sin(x_near.th);
+    double yc = x_near.y + R * cos(x_near.th);
     double xp;
     double yp;
     double thp;
 	
     //////////////////////////////////////
-    while(dist(x, x_rand) < 0.01){
+    while(dist(x, x_rand) > 0.01){
         th = th + B*0.01;
 	x.x = xc + R*sin(th + B);
 	x.y = yc - R*cos(th + B);
 
-	if (this->map.at<uchar>(x.x, x.y) == 0) {
+	if (this->map.at<uchar>(x.x/res + map_origin_x, x.y/res + map_origin_y) == 0) {
 	    return true;
+	
 	}
     }
 	
@@ -411,7 +417,6 @@ std::vector<traj> rrtTree::backtracking_traj(){
     int tracked_node = nearestNeighbor(x_goal);
     traj path_info;
     std::vector<traj> path;
-	visualizeTree();
     while (tracked_node > 0) {
         //traj path_info = new traj;
         path_info.x = ptrTable[tracked_node]->location.x;
