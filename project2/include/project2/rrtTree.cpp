@@ -283,8 +283,8 @@ double rrtTree::dist(point p1, point p2) {
 //return 1 if there is no collision and new state is valid
 //return 0 if there is a collision - invalid new state
 int rrtTree::newState(double *out, point x_near, point x_rand, double MaxStep) {
-    double xc = (2*x_near.x - cos(x_near.th))/2;
-    double yc = (2*x_near.y - sin(x_near.th))/2;
+    double yc = (pow((tan(x_near.th)*x_near.y), 2) + pow(x_near.y, 2) - pow((x_rand.x - x_near.x - x_near.y*tan(x_near.th)), 2) + pow(x_rand.y, 2))/(2*tan(x_near.th)*(x_rand.x-x_near.x - x_near.y*tan(x_near.th)) - 2*x_rand.y + 2*x_near.y*tan(x_near.th)-2*x_near.y);
+    double xc = x_near.x+(x_near.y - yc)*tan(x_near.th);
     double R = sqrt(pow(xc - x_rand.x, 2) + pow(yc - x_rand.y, 2));
     double alpha = atan(L/R);
     double d = MaxStep; //am not sure if we can calculate d or not
@@ -292,7 +292,7 @@ int rrtTree::newState(double *out, point x_near, point x_rand, double MaxStep) {
     point x_new;
     x_new.x = xc + R*sin(B + x_near.th);
     x_new.y = yc - R*cos(B + x_near.th);
-    x_new.th = x_new.th + B;
+    x_new.th = x_near.th + B;
     printf("x_new.x = %f\r\n", x_new.x);
     out[0] = x_new.x;
     out[1] = x_new.y;
@@ -315,21 +315,21 @@ int rrtTree::newState(double *out, point x_near, point x_rand, double MaxStep) {
 //params: points x1->x2 origin->goal
 //        d = 
 
-bool rrtTree::isCollision(point x1, point x2, double d, double a) {
+bool rrtTree::isCollision(point x_near, point x_rand, double d, double a) {
 // am not 100% sure that these ecuations are right?
-    double th = x1.th;
+    double th = x_near.th;
     double R = L/tan(a);
     double B = d/R;
-    point x = x1;
-    double xc = x1.x - R*sin(th);
-    double yc = x1.y + R*cos(th);
+    point x = x_near;
+    double yc = (pow((tan(x_near.th)*x_near.y), 2) + pow(x_near.y, 2) - pow((x_rand.x - x_near.x - x_near.y*tan(x_near.th)), 2) + pow(x_rand.y, 2))/(2*tan(x_near.th)*(x_rand.x-x_near.x - x_near.y*tan(x_near.th)) - 2*x_rand.y + 2*x_near.y*tan(x_near.th)-2*x_near.y);
+    double xc = x_near.x+(x_near.y - yc)*tan(x_near.th);
     double xp;
     double yp;
     double thp;
 	
     //////////////////////////////////////
-    while(dist(x, x2) < 0.01){
-        th = th + B;
+    while(dist(x, x_rand) < 0.01){
+        th = th + B*0.01;
 	x.x = xc + R*sin(th + B);
 	x.y = yc - R*cos(th + B);
 
