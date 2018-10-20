@@ -283,6 +283,70 @@ double rrtTree::dist(point p1, point p2) {
 //return 1 if there is no collision and new state is valid
 //return 0 if there is a collision - invalid new state
 int rrtTree::newState(double *out, point x_near, point x_rand, double MaxStep) {
+
+    //store the shortest distance & the corresponding point
+    double shortest_dist = 0;
+    point x_best;
+    double alph_best;
+    double d_best;
+
+//generate many potential points & store the closest one to x_rand
+    for (int i = 0; i < 21; i++) {
+
+	//we test 20 angles between max_alpha and -max_alpha
+	double alph = max_alpha - (i * max_alpha / 10);
+
+	//for each angle test 10 lengths less than or equal to MaxStep
+        for (int i = 0; i < 10; i++) {
+	    
+	    double d = MaxStep - (i * MaxStep / 10);
+	    
+	    double R = L / tan(alph);
+ 
+	    double xc = x_near.x - R * sin(x_near.th);
+	    double yc = x_near.y + R * cos(x_near.th);
+
+	    double beta = d / R;
+
+    point x_new;
+    x_new.x = xc + R*sin(x_near.th + beta);
+    x_new.y = yc - R*cos(x_near.th + beta);
+    x_new.th = x_near.th + beta;
+    printf("x_new.x = %f\r\n", x_new.x);
+
+	    
+	    //if there is no collision we can then compute dist to x_rand
+	    if (!isCollision(x_near, x_new, d, alph)) {
+		
+		double distance = dist(x_new, x_rand);
+		if (shortest_dist == 0) {
+		    
+		    shortest_dist = distance;
+		    x_best = x_new;
+                } else if (shortest_dist > distance) {
+	
+		    shortest_dist = distance;
+		    x_best = x_new;
+	        } 
+   	    }
+	    
+	} 
+
+    } 
+
+
+    //before returning -> assign the out array values
+    out[0] = x_best.x;
+    out[1] = x_best.y;
+    out[2] = x_best.th;
+    out[3] = alph_best;
+    out[4] = d_best;
+
+    return 1;//I might change this later since the spec is dumb
+
+//OLD CODE
+/*
+
     double yc = (pow((tan(x_near.th)*x_near.y), 2) + pow(x_near.y, 2) - pow((x_rand.x - x_near.x - x_near.y*tan(x_near.th)), 2) + pow(x_rand.y, 2))/(2*tan(x_near.th)*(x_rand.x-x_near.x - x_near.y*tan(x_near.th)) - 2*x_rand.y + 2*x_near.y*tan(x_near.th)-2*x_near.y);
     double xc = x_near.x+(x_near.y - yc)*tan(x_near.th);
     double R = sqrt(pow(xc - x_rand.x, 2) + pow(yc - x_rand.y, 2));
@@ -307,6 +371,8 @@ int rrtTree::newState(double *out, point x_near, point x_rand, double MaxStep) {
 
     //valid new state
     return 1;
+
+*/
 }
 
 
