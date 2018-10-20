@@ -173,7 +173,7 @@ void rrtTree::addVertex(point x_new, point x_rand, int idx_near, double alpha, d
 
 	point xNew = x_new;
 	point xRand = x_rand;
-
+	printf("parent idx = %d\r\n", idx_near);
  	node* new_vertex = new node;
 	ptrTable[count] = new_vertex;
    	new_vertex -> idx = count;
@@ -199,17 +199,16 @@ int rrtTree::generateRRT(double x_max, double x_min, double y_max, double y_min,
     int node;
     double* out = new double[5];
     int noCollision;
-
+	srand(time(NULL));
     for (int i; i <= K; i++) {
-
         x_rand = randomState(x_max, x_min, y_max, y_min);
-
         x_near = nearestNeighbor(x_rand, MaxStep);
         noCollision = newState(out, ptrTable[x_near] -> location, x_rand, MaxStep);
 
         x_new.x = out[0];
         x_new.y = out[1];
         x_new.th = out[2];
+	
         
 	if (noCollision) {
             addVertex(x_new, x_rand, x_near, out[3], out[4]);
@@ -221,8 +220,7 @@ int rrtTree::generateRRT(double x_max, double x_min, double y_max, double y_min,
 
 
 point rrtTree::randomState(double x_max, double x_min, double y_max, double y_min) {
-    point p;
-    srand(time(NULL)); // this might not be random but fix that later.
+    point p; // this might not be random but fix that later.
 
     p.x = (x_max - x_min) * ((double)rand() / (double)RAND_MAX) + x_min;
     p.y = (y_max - y_min) * ((double)rand() / (double)RAND_MAX) + y_min;
@@ -287,14 +285,15 @@ double rrtTree::dist(point p1, point p2) {
 int rrtTree::newState(double *out, point x_near, point x_rand, double MaxStep) {
     double xc = (2*x_near.x - cos(x_near.th))/2;
     double yc = (2*x_near.y - sin(x_near.th))/2;
-    double R = sqrt(pow(xc - x_near.x, 2) + pow(yc - x_near.y, 2));
+    double R = sqrt(pow(xc - x_rand.x, 2) + pow(yc - x_rand.y, 2));
     double alpha = atan(L/R);
-    double d = MaxStep*0.9; //am not sure if we can calculate d or not
+    double d = MaxStep; //am not sure if we can calculate d or not
     double B = d/R;
     point x_new;
     x_new.x = xc + R*sin(B + x_near.th);
     x_new.y = yc - R*cos(B + x_near.th);
     x_new.th = x_new.th + B;
+    printf("x_new.x = %f\r\n", x_new.x);
     out[0] = x_new.x;
     out[1] = x_new.y;
     out[2] = x_new.th;
@@ -346,6 +345,7 @@ std::vector<traj> rrtTree::backtracking_traj(){
     int tracked_node = nearestNeighbor(x_goal);
     traj path_info;
     std::vector<traj> path;
+	visualizeTree();
     while (tracked_node > 0) {
         //traj path_info = new traj;
         path_info.x = ptrTable[tracked_node]->location.x;
