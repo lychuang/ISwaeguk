@@ -408,7 +408,7 @@ bool rrtTree::isCollision(point x_near, point x_new, double d, double a) {
 	x.x = xc + R*sin(th);
 	x.y = yc - R*cos(th);
 
-	if (this->map.at<uchar>(x.x, x.y) == 0) {
+	if (this->map.at<uchar>(x.x/res + map_origin_x, x.y/res + map_origin_y) == 0) {
 	    return true;
 	}
     }
