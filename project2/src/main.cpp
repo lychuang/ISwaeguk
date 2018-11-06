@@ -30,9 +30,9 @@ double world_y_min;
 double world_y_max;
 
 //parameters we should adjust : K, margin, MaxStep
-int margin = 15;
-int K = 1500;
-double MaxStep = 4;
+int margin = 10;
+int K = 4000;
+double MaxStep = 6;
 
 //way points
 std::vector<point> waypoints;
@@ -251,12 +251,11 @@ int main(int argc, char** argv){
 
 	    point curr_point = {current_point.x, current_point.y, current_point.th};
 	    setcmdvel(1, pid_ctrl.get_control(robot_pose, curr_point));
-
 	    //publish it to robot
 	    //it seems like the struct variable  we are publishing is cmd?
             cmd_vel_pub.publish(cmd);
 
-
+	//printf("robot x %f\r\n y %f\r\n", robot_pose.x, robot_pose.y);
 
 /*
             point current;
@@ -271,11 +270,14 @@ int main(int argc, char** argv){
 	
 	    //when the magnitude of vector between robot and point is < threshold
 	    //move on to next point
-	    if(sqrt(pow((robot_pose.x - path_RRT[look_ahead_idx].x), 2)
-			 + pow((robot_pose.y - path_RRT[look_ahead_idx].y), 2)) < 0.2) {
+		
+			 
+	    if(sqrt(pow((robot_pose.x - current_point.x), 2)
+			 + pow((robot_pose.y - current_point.y), 2)) < 0.5) {
                      
 		look_ahead_idx++; //increment index
 		current_point = path_RRT[look_ahead_idx]; //increment current point 
+		printf("current goal %d\r\n", look_ahead_idx);
             }
             
 	    //no more points in path - reached GOAL!     
@@ -296,7 +298,8 @@ int main(int argc, char** argv){
 		5. if robot reach the final goal
 			finish RUNNING (state = FINISH)
 	    */
-	    
+	    ros::spinOnce();
+            control_rate.sleep();
         } break;
 
         case FINISH: {
@@ -317,8 +320,8 @@ int main(int argc, char** argv){
 void generate_path_RRT(){
 
     std::vector<traj> one_path;
-
-    for (int i = 0; i < static_cast<int>(waypoints.size()); i++) {
+	printf("size waypoints: %d\r\n", static_cast<int>(waypoints.size()));
+    for (int i = 0; i + 1 < static_cast<int>(waypoints.size()); i++) {
 
 	//instance of rrtTree class for each iteration
 	//create the rrtTree for the next goal
@@ -385,6 +388,7 @@ void callback_state(gazebo_msgs::ModelStatesConstPtr msgs){
 }
 
 void setcmdvel(double vel, double deg){
+	//printf("deg: %f\r\n", deg);
     cmd.drive.speed = vel;
     cmd.drive.steering_angle = deg;
 }

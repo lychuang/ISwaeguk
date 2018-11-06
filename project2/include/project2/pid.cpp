@@ -15,9 +15,9 @@ PID::PID(){
     error = 0;
     error_sum = 0;
     error_diff = 0;
-    Kp = 1.5;
+    Kp = 1;
     Ki = 0;
-    Kd = 5; 
+    Kd = 0; 
 }
 
 void PID::reset() {
@@ -39,8 +39,7 @@ float PID::get_control(point car_pose, point goal_pose){
 
 	error = angle2 - car_pose.th; 
 	error_sum = error_sum + (error * 0.1);
-
-
+	
 	if (error > M_PI) {
 
 	    error = error - (2 * M_PI);
