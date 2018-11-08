@@ -30,9 +30,9 @@ double world_y_min;
 double world_y_max;
 
 //parameters we should adjust : K, margin, MaxStep
-int margin = 8;
-int K = 500;
-double MaxStep = 2;
+int margin = 10;
+int K = 4000;
+double MaxStep = 6;
 
 //way points
 std::vector<point> waypoints;
@@ -44,6 +44,8 @@ std::vector<traj> path_RRT;
 point robot_pose;
 ackermann_msgs::AckermannDriveStamped cmd;
 gazebo_msgs::ModelStatesConstPtr model_states;
+
+PID pid_ctrl;
 
 //FSM state
 int state;
@@ -69,7 +71,7 @@ int main(int argc, char** argv){
 
     char* user = getpwuid(getuid())->pw_name;
     map = cv::imread((std::string("/home/") + std::string(user) +
-                      std::string("/catkin_ws/src/project3/src/ground_truth_map.pgm")).c_str(), CV_LOAD_IMAGE_GRAYSCALE);
+                      std::string("/catkin_ws/src/project3/project3/src/ground_truth_map.pgm")).c_str(), CV_LOAD_IMAGE_GRAYSCALE);
 
     map_y_range = map.cols;
     map_x_range = map.rows;
@@ -102,6 +104,9 @@ int main(int argc, char** argv){
     bool running = true;
     int look_ahead_idx;
     ros::Rate control_rate(60);
+
+    //Running State
+    traj current_point;
 
     while(running){
         switch (state) {
@@ -229,8 +234,69 @@ int main(int argc, char** argv){
             } break;
 
             case RUNNING: {
-	        //TODO
-            } break;
+	         // 1.
+	    //This will state loop continuously until we reach the goal
+
+	    //we retrieve the next steering angle
+
+	    point curr_point = {current_point.x, current_point.y, current_point.th};
+
+        
+
+	    setcmdvel(1, pid_ctrl.get_control(robot_pose, curr_point));
+	    //publish it to robot
+	    //it seems like the struct variable  we are publishing is cmd?
+            cmd_vel_pub.publish(cmd);
+
+            printf("%f\n\r", pid_ctrl.get_control(robot_pose, curr_point));
+
+	printf("robot x %f\r\n y %f\r\n", robot_pose.x, robot_pose.y);
+
+/*
+            point current;
+
+            for (int i = 0; i <= path_RRT.size(); i++){
+                current = path_RRT[i];
+                setcmdvet(1, pid_ctrl.get_controler(robot_pose, current));
+            }
+                 cmd_vel_pub.pub(AckermannDriveStamped)
+  *ptrTable[i]->location.y - x_rand.y*/ 
+
+	
+	    //when the magnitude of vector between robot and point is < threshold
+	    //move on to next point
+		
+			 
+	    if(sqrt(pow((robot_pose.x - current_point.x), 2)
+			 + pow((robot_pose.y - current_point.y), 2)) < 0.5) {
+                     
+		look_ahead_idx++; //increment index
+		current_point = path_RRT[look_ahead_idx]; //increment current point 
+		printf("current goal %d\r\n", look_ahead_idx);
+            }
+            
+	    //no more points in path - reached GOAL!     
+	    if (look_ahead_idx >= path_RRT.size()) {
+                
+                state = FINISH; //update FSM to finished
+            }
+
+
+	    //TODO
+	    /*
+		1. make control following point in the variable "path_RRT"
+			use function setcmdvel(double v, double w) which set cmd_vel as desired input value.
+		2. publish
+		3. check distance between robot and current goal point
+		4. if distance is less than 0.2 (update next goal point) (you can change the distance if you want)
+			look_ahead_idx++
+		5. if robot reach the final goal
+			finish RUNNING (state = FINISH)
+	    */
+	    ros::spinOnce();
+            control_rate.sleep();
+        } break;
+
 
             case FINISH: {
                 setcmdvel(0,0);
@@ -249,7 +315,35 @@ int main(int argc, char** argv){
 
 void generate_path_RRT()
 {
-    //TODO
+     std::vector<traj> one_path;
+	printf("size waypoints: %d\r\n", static_cast<int>(waypoints.size()));
+    for (int i = 0; i + 1 < static_cast<int>(waypoints.size()); i++) {
+
+        printf("%d\n\r", i);
+	//instance of rrtTree class for each iteration
+	//create the rrtTree for the next goal
+        rrtTree tree (waypoints[i], waypoints[i+1], map, map_origin_x, map_origin_y, res, margin);
+
+        tree.generateRRT(world_x_max, world_x_min, world_y_max, world_y_min, K, MaxStep);
+	//generate the path, store it
+	one_path = tree.backtracking_traj();
+	//add this path to the overall path
+
+
+printf("onepathsize = %d\n\r", static_cast<int>(one_path.size())); 
+        for (int j = static_cast<int>(one_path.size()) - 1; j >= 0; j--) {
+
+            path_RRT.push_back(one_path[j]);
+        }
+    }
+    /*
+     * 1. for loop
+     * 2.  call RRT generate function in order to make a path which connects i way point to i+1 way point.
+     * 3.  store path to variable "path_RRT"
+     * 4.  when you store path, you have to reverse the order of points in the generated path since BACKTRACKING makes a path in a reverse order (goal -> start).
+     * 5. end
+     */
+
 }
 
 void set_waypoints()
