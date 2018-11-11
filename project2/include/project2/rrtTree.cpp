@@ -189,7 +189,6 @@ void rrtTree::addVertex(point x_new, point x_rand, int idx_near, double alpha, d
 
 
 
-
 int rrtTree::generateRRT(double x_max, double x_min, double y_max, double y_min, int K, double MaxStep) {
 
     point x_rand;
@@ -197,22 +196,35 @@ int rrtTree::generateRRT(double x_max, double x_min, double y_max, double y_min,
     int x_near;
     int node;
     double* out = new double[5];
+
+    
+
+    
+    out[0] = x_max + 1; //failure case
+
     int noCollision;
 	srand(time(NULL));
     for (int i; i <= K; i++) {
         x_rand = randomState(x_max, x_min, y_max, y_min);
         x_near = nearestNeighbor(x_rand, MaxStep);
-        noCollision = newState(out, ptrTable[x_near] -> location, x_rand, MaxStep);
-
-        x_new.x = out[0];
-        x_new.y = out[1];
-        x_new.th = out[2];
-	
+        noCollision = newState(out, ptrTable[x_near] -> location, x_rand, MaxStep);	
         
-	if (noCollision) {
+    	if (noCollision) {
+
+            x_new.x = out[0];
+            x_new.y = out[1];
+            x_new.th = out[2];
+
+            //printf("%d x near\n\r", x_near);
             addVertex(x_new, x_rand, x_near, out[3], out[4]);
         }
     }
+
+    if (out[0] == x_max + 1) { //we unsuccessfully generated vertices
+
+        return 1;
+    }
+
     return 0;
 }
 
@@ -234,20 +246,26 @@ int rrtTree::nearestNeighbor(point x_rand, double MaxStep) {
     double length = 10000;
     int index;
 
+    //printf("point x %f y %f\n\r", x_rand.x, x_rand.y);
+
+
+    //printf("count %d\n\r", count);
     for (int i = 0; i < count; i++) {
 
 	//the angle to x_rand from car's current direction
-	double theta_rand = atan2(ptrTable[i]->location.y - x_rand.y
-					, ptrTable[i]->location.x - x_rand.x);
-	double distance = dist(x_rand, ptrTable[i] -> location);
+	    double theta_rand = atan2(ptrTable[i]->location.y - x_rand.y
+					                , ptrTable[i]->location.x - x_rand.x);
+	    double distance = dist(x_rand, ptrTable[i] -> location);
 	
-	if ((distance < length) && ((ptrTable[i]->location.th - theta_rand) < max_th) 
-		&& ((ptrTable[i]->location.th - theta_rand) > -max_th)) {
+	    if ((distance < length) && ((ptrTable[i]->location.th - theta_rand) < max_th) 
+		    && ((ptrTable[i]->location.th - theta_rand) > -max_th)) {
 
-	    length = distance;
-	    index = ptrTable[i] -> idx;
-	}
+	        length = distance;
+	        index = ptrTable[i] -> idx;
+            //printf("here\n\r");
+	    }
     }
+
 
     return index;
 }
@@ -294,19 +312,19 @@ int rrtTree::newState(double *out, point x_near, point x_rand, double MaxStep) {
     for (int i = 0; i < 21; i++) {
 
 	//we test 20 angles between max_alpha and -max_alpha
-	double alph = max_alpha - (i * max_alpha / 10);
+    	double alph = max_alpha - (i * max_alpha / 10);
 
 	//for each angle test 10 lengths less than or equal to MaxStep
         for (int i = 0; i < 10; i++) {
 	    
-	    double d = MaxStep - (i * MaxStep / 10);
+	        double d = MaxStep - (i * MaxStep / 10);
 	    
-	    double R = L / tan(alph);
+	        double R = L / tan(alph);
  
-	    double xc = x_near.x - R * sin(x_near.th);
-	    double yc = x_near.y + R * cos(x_near.th);
+	        double xc = x_near.x - R * sin(x_near.th);
+	        double yc = x_near.y + R * cos(x_near.th);
 
-	    double beta = d / R;
+	        double beta = d / R;
 
 
             point x_new;
@@ -318,31 +336,37 @@ int rrtTree::newState(double *out, point x_near, point x_rand, double MaxStep) {
 
 	    
 	    //if there is no collision we can then compute dist to x_rand
-	    if (!isCollision(x_near, x_new, d, alph)) {
+	        if (!isCollision(x_near, x_new, d, alph)) {
 		
-		double distance = dist(x_new, x_rand);
-		if (distance == 0) {
+		        double distance = dist(x_new, x_rand);
+		        if (distance == 0) {
 		    
-		    shortest_dist = distance;
-		    x_best = x_new;
+		            shortest_dist = distance;
+		            x_best = x_new;
 
-		    alph_best = alph;
-		    d_best = d;
+		            alph_best = alph;
+		            d_best = d;
+
                 } else if (shortest_dist > distance) {
-			alph_best = alph;
-			d_best = d;
+			
+                    alph_best = alph;
+    			    d_best = d;
 	
-		    shortest_dist = distance;
-		    x_best = x_new;
-		    alph_best = alph;
-		    d_best = d;
-	        } 
-   	    }
+    	    	    shortest_dist = distance;
+	    	        x_best = x_new;
+		            alph_best = alph;
+		            d_best = d;
+	            } 
+   	        }
 	    
-	} 
+	    } 
 
     } 
 
+    if (x_best.x == 10000) {
+
+	    return 0;
+    }
 	
     //before returning -> assign the out array values
     out[0] = x_best.x;
@@ -350,9 +374,7 @@ int rrtTree::newState(double *out, point x_near, point x_rand, double MaxStep) {
     out[2] = x_best.th;
     out[3] = alph_best;
     out[4] = d_best;
-	if (x_best.x == 10000) {
-	return 0;
-} 
+ 
     return 1;//I might change this later since the spec is dumb
 
 //OLD CODE
