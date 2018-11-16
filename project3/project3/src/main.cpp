@@ -30,8 +30,8 @@ double world_y_min;
 double world_y_max;
 
 //parameters we should adjust : K, margin, MaxStep
-int margin = 4;
-int K = 4000;
+int margin = 3;
+int K = 5000;
 double MaxStep = 10;
 
 //way points
@@ -71,7 +71,7 @@ int main(int argc, char** argv){
 
     char* user = getpwuid(getuid())->pw_name;
     map = cv::imread((std::string("/home/") + std::string(user) +
-                      std::string("/catkin_ws/src/project3/project3/src/ground_truth_map.pgm")).c_str(), CV_LOAD_IMAGE_GRAYSCALE);
+                      std::string("/catkin_ws/src/ISwaeguk/project3/project3/src/ground_truth_map.pgm")).c_str(), CV_LOAD_IMAGE_GRAYSCALE);
 
     map_y_range = map.cols;
     map_x_range = map.rows;
@@ -243,7 +243,7 @@ int main(int argc, char** argv){
                 point curr_point = {current_point.x, current_point.y, current_point.th};
                 
                 //retrieve the next steering angle
-                setcmdvel(1, pid_ctrl.get_control(robot_pose, curr_point));
+                setcmdvel(1.5, pid_ctrl.get_control(robot_pose, curr_point));
     	        //publish it to robot
 	            cmd_vel_pub.publish(cmd);
 
@@ -295,12 +295,15 @@ void generate_path_RRT()
     
     //create a path between each waypoint
     for (int i = 0; i + 1 < static_cast<int>(waypoints.size()); i++) {
-
+	point curr_point = waypoints[i];
+	if (i > 0) {
+	curr_point = {path_RRT[path_RRT.size()-1].x, path_RRT[path_RRT.size()-1].y, path_RRT[path_RRT.size()-1].th};
+}
         //DEBUG// printf("%d\n\r", i);
         
 	    //instance of rrtTree class for each iteration
 	    //create the rrtTree for the next goal
-        rrtTree tree (waypoints[i], waypoints[i+1], map, map_origin_x, map_origin_y, res, margin);
+        rrtTree tree (curr_point, waypoints[i+1], map, map_origin_x, map_origin_y, res, margin);
         
         //generate the search tree
         int notok = tree.generateRRT(world_x_max, world_x_min, world_y_max, world_y_min, K, MaxStep);
