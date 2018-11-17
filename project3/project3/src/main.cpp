@@ -32,7 +32,7 @@ double world_y_max;
 //parameters we should adjust : K, margin, MaxStep
 int margin = 3;
 int K = 5000;
-double MaxStep = 10;
+double MaxStep = 15;
 
 //way points
 std::vector<point> waypoints;
@@ -55,6 +55,7 @@ void set_waypoints();
 void generate_path_RRT();
 void callback_state(gazebo_msgs::ModelStatesConstPtr msgs);
 void setcmdvel(double v, double w);
+double dist(point p1, point p2);
 
 int main(int argc, char** argv){
     ros::init(argc, argv, "rrt_main");
@@ -243,7 +244,7 @@ int main(int argc, char** argv){
                 point curr_point = {current_point.x, current_point.y, current_point.th};
                 
                 //retrieve the next steering angle
-                setcmdvel(1.5, pid_ctrl.get_control(robot_pose, curr_point));
+                setcmdvel(1, pid_ctrl.get_control(robot_pose, curr_point));
     	        //publish it to robot
 	            cmd_vel_pub.publish(cmd);
 
@@ -292,7 +293,7 @@ void generate_path_RRT()
     std::vector<traj> one_path;    
     //DEBUG//
 	printf("size waypoints: %d\r\n", static_cast<int>(waypoints.size()));
-    
+    	bool valid_path = true;
     //create a path between each waypoint
     for (int i = 0; i + 1 < static_cast<int>(waypoints.size()); i++) {
 	point curr_point = waypoints[i];
@@ -311,13 +312,26 @@ void generate_path_RRT()
         //check if anything was generated
         if (notok) {
             printf("generate RRT failed\n\r");
+		valid_path = false;
+		break;
         }
 
         //generate the path, store it
 	    one_path = tree.backtracking_traj();
 
         //DEBUG//
-        printf("onepathsize = %d\n\r", static_cast<int>(one_path.size())); 
+        printf("onepathsize = %d\n\r", static_cast<int>(one_path.size()));
+	if (static_cast<int>(one_path.size()) == 0) {
+		printf("generate path failed. Makes a new path. \n\r");
+		valid_path = false;
+		break;
+	}
+	point last_point = {one_path[0].x, one_path[0].y, one_path[0].th};
+	if (dist(last_point, waypoints[i+1]) > 1) {
+		valid_path = false;
+		printf("generate path failed. Makes a new path. \n\r");
+		break;
+	}
 
         //add the path to the overall path      
         for (int j = static_cast<int>(one_path.size()) - 1; j >= 0; j--) {
@@ -328,6 +342,10 @@ void generate_path_RRT()
         //ensure the next path is aware of car's current heading direction
         waypoints[i+1].th = path_RRT[path_RRT.size()-1].th;
     }
+	if(!valid_path) {
+		path_RRT.clear();
+		generate_path_RRT();
+	}
 }
 
 void set_waypoints()
@@ -368,3 +386,7 @@ void setcmdvel(double vel, double deg){
     cmd.drive.speed = vel;
     cmd.drive.steering_angle = deg;
 }
+double dist(point p1, point p2) {
+	return sqrt(pow((p1.x - p2.x), 2) + pow((p1.y - p2.y), 2));
+}
+
