@@ -177,6 +177,8 @@ void set_waypoints()
 {
     std::srand(std::time(NULL));
     point waypoint_candid[5];
+
+    //The initial point
     waypoint_candid[0].x = -3.5;
     waypoint_candid[0].y = 12.0;
 
@@ -197,6 +199,22 @@ void set_waypoints()
             }
         }
     }
+
+
+    /** 
+      Car goes 1 -> 4 -> 3 -> 2 -> 1
+      Map Origin -> o
+        j 
+    
+  jsize -----------
+        |  1 |  4 |
+        |    |    |
+        -----------
+        |  2 |  3 |
+        |    |    |
+        o----------  i
+                 isize
+    **/
 
     //TODO 2
     //4th quadrant
@@ -238,6 +256,7 @@ void set_waypoints()
         }
     }
 
+    //final point
     waypoint_candid[4].x = -3.5;
     waypoint_candid[4].y = 12.0;
 
