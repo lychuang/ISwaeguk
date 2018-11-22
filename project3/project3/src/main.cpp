@@ -72,7 +72,7 @@ int main(int argc, char** argv){
 
     char* user = getpwuid(getuid())->pw_name;
     map = cv::imread((std::string("/home/") + std::string(user) +
-                      std::string("/catkin_ws/src/ISwaeguk/project3/project3/src/ground_truth_map.pgm")).c_str(), CV_LOAD_IMAGE_GRAYSCALE);
+                      std::string("/catkin_ws/src/project3/project3/src/ground_truth_map.pgm")).c_str(), CV_LOAD_IMAGE_GRAYSCALE);
 
     map_y_range = map.cols;
     map_x_range = map.rows;
