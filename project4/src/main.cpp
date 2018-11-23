@@ -28,7 +28,9 @@ double world_x_min;
 double world_x_max;
 double world_y_min;
 double world_y_max;
-
+traj current_point;
+PID pid_ctrl;
+int look_ahead_idx;
 //parameters we should adjust : K, margin, MaxStep
 int margin = 3;
 int K = 5000;
@@ -53,18 +55,17 @@ void setcmdvel(double v, double w);
 void callback_state(geometry_msgs::PoseWithCovarianceStampedConstPtr msgs);
 void set_waypoints();
 void generate_path_RRT();
+double dist(point p1, point p2);
 
 int main(int argc, char** argv){
     ros::init(argc, argv, "slam_main");
     ros::NodeHandle n;
-
     // Initialize topics
     ros::Publisher cmd_vel_pub = n.advertise<ackermann_msgs::AckermannDriveStamped>("/vesc/high_level/ackermann_cmd_mux/input/nav_0",1);
     
     ros::Subscriber gazebo_pose_sub = n.subscribe("/amcl_pose", 100, callback_state);
 
     printf("Initialize topics\n");
-    
     // FSM
     state = INIT;
     bool running = true;
@@ -77,7 +78,7 @@ int main(int argc, char** argv){
             // Load Map
             char* user = getpwuid(getuid())->pw_name;
             cv::Mat map_org = cv::imread((std::string("/home/") + std::string(user) +
-                              std::string("/catkin_ws/src/project4/src/slam_map.pgm")).c_str(), CV_LOAD_IMAGE_GRAYSCALE);
+                              std::string("/catkin_ws/src/ISwaeguk/project4/src/slam_map.pgm")).c_str(), CV_LOAD_IMAGE_GRAYSCALE);
 
             cv::transpose(map_org,map);
             cv::flip(map,map,1);
@@ -115,6 +116,8 @@ int main(int argc, char** argv){
             ros::Rate(0.33).sleep();
 
             printf("Initialize ROBOT\n");
+	    current_point = path_RRT[0];
+            look_ahead_idx = 0;
             state = RUNNING;
 
         case RUNNING: {
@@ -176,7 +179,7 @@ int main(int argc, char** argv){
 			ros::spinOnce();
 			control_rate.sleep();
              */
-		}
+		
         } break;
 
         case FINISH: {
@@ -389,4 +392,7 @@ void generate_path_RRT()
     sleep(5);
      */
     
+}
+double dist(point p1, point p2) {
+	return sqrt(pow((p1.x - p2.x), 2) + pow((p1.y - p2.y), 2));
 }
