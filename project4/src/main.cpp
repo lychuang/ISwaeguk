@@ -30,9 +30,9 @@ double world_y_min;
 double world_y_max;
 
 //parameters we should adjust : K, margin, MaxStep
-int margin = 5;
-int K = 500;
-double MaxStep = 2;
+int margin = 3;
+int K = 5000;
+double MaxStep = 15;
 int waypoint_margin = 24;
 
 //way points
@@ -119,6 +119,37 @@ int main(int argc, char** argv){
 
         case RUNNING: {
                 //TODO 1
+            
+            //get current point
+            point curr_point = {current_point.x, current_point.y, current_point.th};
+            
+            //retrieve the next steering angle
+            setcmdvel(1, pid_ctrl.get_control(robot_pose, curr_point));
+            //publish it to robot
+            cmd_vel_pub.publish(cmd);
+            
+            
+            //dist between robot and point is < threshold
+            //move on to next point
+            if(sqrt(pow((robot_pose.x - current_point.x), 2)
+                    + pow((robot_pose.y - current_point.y), 2)) < 0.5) {
+                
+                look_ahead_idx++; //increment index
+                current_point = path_RRT[look_ahead_idx]; //increment current point
+                printf("current goal %d\r\n", look_ahead_idx);
+            }
+            
+            if (look_ahead_idx >= path_RRT.size()) { //no more points in path - reached GOAL!
+                
+                state = FINISH; //update FSM to finished
+            }
+            
+            //ensure commands get processed immediately
+            ros::spinOnce();
+            
+            //maintain desired frequency of looping
+            control_rate.sleep();
+            /* This part is the code that came with the project
 		int current_goal = 1;
    		PID pid_ctrl;
 		while(ros::ok()) {
@@ -144,6 +175,7 @@ int main(int argc, char** argv){
 			}
 			ros::spinOnce();
 			control_rate.sleep();
+             */
 		}
         } break;
 
@@ -271,6 +303,64 @@ void set_waypoints()
 void generate_path_RRT()
 {
     //TODO 1
+    std::vector<traj> one_path;
+    //DEBUG//
+    printf("size waypoints: %d\r\n", static_cast<int>(waypoints.size()));
+    bool valid_path = true;
+    //create a path between each waypoint
+    for (int i = 0; i + 1 < static_cast<int>(waypoints.size()); i++) {
+        point curr_point = waypoints[i];
+        if (i > 0) {
+            curr_point = {path_RRT[path_RRT.size()-1].x, path_RRT[path_RRT.size()-1].y, path_RRT[path_RRT.size()-1].th};
+        }
+        //DEBUG// printf("%d\n\r", i);
+        
+        //instance of rrtTree class for each iteration
+        //create the rrtTree for the next goal
+        rrtTree tree (curr_point, waypoints[i+1], map, map_origin_x, map_origin_y, res, margin);
+        
+        //generate the search tree
+        int notok = tree.generateRRT(world_x_max, world_x_min, world_y_max, world_y_min, K, MaxStep);
+        
+        //check if anything was generated
+        if (notok) {
+            printf("generate RRT failed\n\r");
+            valid_path = false;
+            break;
+        }
+        
+        //generate the path, store it
+        one_path = tree.backtracking_traj();
+        
+        //DEBUG//
+        printf("onepathsize = %d\n\r", static_cast<int>(one_path.size()));
+        if (static_cast<int>(one_path.size()) == 0) {
+            printf("generate path failed. Makes a new path. \n\r");
+            valid_path = false;
+            break;
+        }
+        point last_point = {one_path[0].x, one_path[0].y, one_path[0].th};
+        if (dist(last_point, waypoints[i+1]) > 1) {
+            valid_path = false;
+            printf("generate path failed. Makes a new path. \n\r");
+            break;
+        }
+        
+        //add the path to the overall path
+        for (int j = static_cast<int>(one_path.size()) - 1; j >= 0; j--) {
+            
+            path_RRT.push_back(one_path[j]);
+        }
+        
+        //ensure the next path is aware of car's current heading direction
+        waypoints[i+1].th = path_RRT[path_RRT.size()-1].th;
+    }
+    if(!valid_path) {
+        path_RRT.clear();
+        generate_path_RRT();
+    }
+    
+    /* this part came with the project
     rrtTree* temp_tree;
     traj temp_traj;
     temp_traj.x = waypoints[0].x;
@@ -291,9 +381,12 @@ void generate_path_RRT()
 		    path_RRT.push_back(temp_traj[temp_traj.size() - j - 1]);
 		}
         }
+     
     }
-
+    
     temp_tree->visualizeTree(path_RRT);
     delete temp_tree;
     sleep(5);
+     */
+    
 }
