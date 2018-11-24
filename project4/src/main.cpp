@@ -33,9 +33,9 @@ PID pid_ctrl;
 int look_ahead_idx;
 //parameters we should adjust : K, margin, MaxStep
 int margin = 3;
-int K = 5000;
-double MaxStep = 15;
-int waypoint_margin = 24;
+int K = 3000;
+double MaxStep = 10;
+int waypoint_margin = 25;
 
 //way points
 std::vector<point> waypoints;
@@ -310,8 +310,11 @@ void generate_path_RRT()
     //DEBUG//
     printf("size waypoints: %d\r\n", static_cast<int>(waypoints.size()));
     bool valid_path = true;
+	int path_count = 0;
     //create a path between each waypoint
     for (int i = 0; i + 1 < static_cast<int>(waypoints.size()); i++) {
+	valid_path = true;
+	path_count++;
         point curr_point = waypoints[i];
         if (i > 0) {
             curr_point = {path_RRT[path_RRT.size()-1].x, path_RRT[path_RRT.size()-1].y, path_RRT[path_RRT.size()-1].th};
@@ -329,34 +332,46 @@ void generate_path_RRT()
         if (notok) {
             printf("generate RRT failed\n\r");
             valid_path = false;
-            break;
+            
         }
         
         //generate the path, store it
-        one_path = tree.backtracking_traj();
+        one_path = tree.backtracking_traj(MaxStep);
         
         //DEBUG//
         printf("onepathsize = %d\n\r", static_cast<int>(one_path.size()));
         if (static_cast<int>(one_path.size()) == 0) {
             printf("generate path failed. Makes a new path. \n\r");
             valid_path = false;
-            break;
+            
         }
         point last_point = {one_path[0].x, one_path[0].y, one_path[0].th};
-        if (dist(last_point, waypoints[i+1]) > 1) {
+        if (dist(last_point, waypoints[i+1]) > 2.5) {
             valid_path = false;
             printf("generate path failed. Makes a new path. \n\r");
-            break;
+          
         }
         
         //add the path to the overall path
-        for (int j = static_cast<int>(one_path.size()) - 1; j >= 0; j--) {
-            
-            path_RRT.push_back(one_path[j]);
-        }
+	if(valid_path){
+		for (int j = static_cast<int>(one_path.size()) - 1; j >= 0; j--) {
+		    
+		    path_RRT.push_back(one_path[j]);
+		}
+	path_count = 0;
+	} else {
+	one_path.clear();
+	i--;
+	}
+	if (path_count == 3) {
+	break;
+	one_path.clear();
+	}
         
         //ensure the next path is aware of car's current heading direction
         waypoints[i+1].th = path_RRT[path_RRT.size()-1].th;
+	tree.visualizeTree(path_RRT);
+	sleep(5);
     }
     if(!valid_path) {
         path_RRT.clear();

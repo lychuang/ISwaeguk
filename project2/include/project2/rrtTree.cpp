@@ -105,8 +105,7 @@ void rrtTree::visualizeTree(){
 	    }
     }
     cv::namedWindow("Mapping");
-    cv::Rect imgROI((int)Res*200,(int)Res*200,(int)Res*400,(int)Res*400);
-    cv::imshow("Mapping", imgResult(imgROI));
+    cv::imshow("Mapping", imgResult);
     cv::waitKey(1);
 }
 
@@ -160,8 +159,7 @@ void rrtTree::visualizeTree(std::vector<traj> path){
 	    }
     }
     cv::namedWindow("Mapping");
-    cv::Rect imgROI((int)Res*200,(int)Res*200,(int)Res*400,(int)Res*400);
-    cv::imshow("Mapping", imgResult(imgROI));
+    cv::imshow("Mapping", imgResult);
     cv::waitKey(1);
 }
 
@@ -447,8 +445,8 @@ bool rrtTree::isCollision(point x_near, point x_new, double d, double a) {
     return false;
 }
 
-std::vector<traj> rrtTree::backtracking_traj(){
-    int tracked_node = nearestNeighbor(x_goal);
+std::vector<traj> rrtTree::backtracking_traj(int MaxStep){
+    int tracked_node = nearestNeighbor(x_goal, MaxStep);
     traj path_info;
 	
     std::vector<traj> path;
