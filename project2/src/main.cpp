@@ -328,7 +328,7 @@ void generate_path_RRT(){
         rrtTree tree (waypoints[i], waypoints[i+1], map, map_origin_x, map_origin_y, res, margin);
         tree.generateRRT(world_x_max, world_x_min, world_y_max, world_y_min, K, MaxStep);
 	//generate the path, store it
-	one_path = tree.backtracking_traj();
+	one_path = tree.backtracking_traj(MaxStep);
 	//add this path to the overall path
 
 ///////////////////////////////////////

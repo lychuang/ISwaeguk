@@ -446,9 +446,21 @@ bool rrtTree::isCollision(point x_near, point x_new, double d, double a) {
 }
 
 std::vector<traj> rrtTree::backtracking_traj(int MaxStep){
-    int tracked_node = nearestNeighbor(x_goal, MaxStep);
+    int tracked_node;
     traj path_info;
-	
+	bool has_chiled = false;
+	while(!has_chiled) {
+		tracked_node = nearestNeighbor(x_goal, MaxStep);
+		for(int i = 0; i < count; i++){
+			if(ptrTable[i]->idx_parent = tracked_node) {
+			has_chiled = true;
+			break;
+			}
+		}
+		if(!has_chiled){
+			ptrTable[tracked_node]->location.x = 10000;
+		}
+	}
     std::vector<traj> path;
     while (tracked_node > 0) {
         //traj path_info = new traj;

@@ -32,7 +32,7 @@ traj current_point;
 PID pid_ctrl;
 int look_ahead_idx;
 //parameters we should adjust : K, margin, MaxStep
-int margin = 3;
+int margin = 4;
 int K = 3000;
 double MaxStep = 10;
 int waypoint_margin = 25;
@@ -220,7 +220,6 @@ void set_waypoints()
     cv::Mat map_margin = map.clone();
     int jSize = map.cols; // the number of columns
     int iSize = map.rows; // the number of rows
-
     for (int i = 0; i < iSize; i++) {
         for (int j = 0; j < jSize; j++) {
             if (map.at<uchar>(i, j) < 125) {
@@ -255,7 +254,7 @@ void set_waypoints()
     //4th quadrant
     while(true)
     {
-        int rand_i = ((1+iSize)/2) + std::rand() % (iSize/2);
+        int rand_i = ((1+iSize)/2) + std::rand() % (iSize/4);
         int rand_j = ((1+jSize)/2) + std::rand() % (jSize/2);
         if(map_margin.at<uchar>(rand_i,rand_j)>125)
         {
@@ -264,12 +263,13 @@ void set_waypoints()
           break;
         }
     }
+	printf("1\n");
 
     //3th quadrant
     while(true)
     {
-        int rand_i = ((1+iSize)/2) + std::rand() % (iSize/2);
-        int rand_j = std::rand() % (jSize/2);
+        int rand_i = ((1+iSize)/2) + std::rand() % (iSize/4);
+        int rand_j =  ((jSize)/ 18) + std::rand() % (jSize/4);
         if(map_margin.at<uchar>(rand_i,rand_j)>125)
         {
           waypoint_candid[2].x = res*(rand_i-map_origin_x);
@@ -277,11 +277,11 @@ void set_waypoints()
           break;
         }
     }
-
+	printf("2\n");
     //2th quadrant
     while(true)
     {
-        int rand_i = std::rand() % (iSize/2);
+        int rand_i = ((1+iSize)/8) + std::rand() % (iSize/4);
         int rand_j = std::rand() % (jSize/2);
         if(map_margin.at<uchar>(rand_i,rand_j)>125)
         {
@@ -290,6 +290,7 @@ void set_waypoints()
           break;
         }
     }
+	printf("3");
 
     //final point
     waypoint_candid[4].x = -3.5;
@@ -332,6 +333,7 @@ void generate_path_RRT()
         if (notok) {
             printf("generate RRT failed\n\r");
             valid_path = false;
+	    break;
             
         }
         
@@ -370,7 +372,7 @@ void generate_path_RRT()
         
         //ensure the next path is aware of car's current heading direction
         waypoints[i+1].th = path_RRT[path_RRT.size()-1].th;
-	tree.visualizeTree(path_RRT);
+	//tree.visualizeTree(path_RRT);
 	sleep(5);
     }
     if(!valid_path) {
