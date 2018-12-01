@@ -317,7 +317,7 @@ void generate_path_RRT()
         }
 
         //generate the path, store it
-	    one_path = tree.backtracking_traj();
+	    one_path = tree.backtracking_traj(MaxStep);
 
         //DEBUG//
         printf("onepathsize = %d\n\r", static_cast<int>(one_path.size()));
