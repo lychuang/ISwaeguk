@@ -34,10 +34,10 @@ traj current_point;
 PID pid_ctrl;
 int look_ahead_idx;
 //parameters we should adjust : K, margin, MaxStep
-int margin = 3;
+int margin = 6;
 int K = 3000;
 double MaxStep = 10;
-int waypoint_margin = 25;
+int waypoint_margin = 15;
 
 //way points
 std::vector<point> waypoints;
@@ -82,7 +82,7 @@ int main(int argc, char** argv){
             // Load Map
             char* user = getpwuid(getuid())->pw_name;
             cv::Mat map_org = cv::imread((std::string("/home/") + std::string(user) +
-                              std::string("/catkin_ws/src/project4/src/slam_map.pgm")).c_str(), CV_LOAD_IMAGE_GRAYSCALE);
+                              std::string("/catkin_ws/src/ISwaeguk/project4/project4/src/slam_map.pgm")).c_str(), CV_LOAD_IMAGE_GRAYSCALE);
 
             cv::transpose(map_org,map);
             cv::flip(map,map,1);
@@ -132,7 +132,6 @@ int main(int argc, char** argv){
             setcmdvel(1, pid_ctrl.get_control(robot_pose, curr_point));
             //publish it to robot
             cmd_vel_pub.publish(cmd);
-            
             
             //dist between robot and point is < threshold
             //move on to next point
@@ -228,7 +227,7 @@ void set_waypoints()
     //4th quadrant
     while(true)
     {
-        int rand_i = ((1+iSize)/2) + std::rand() % (iSize/2);
+        int rand_i = ((1+iSize)/2) + std::rand() % (iSize/4);
         int rand_j = ((1+jSize)/2) + std::rand() % (jSize/2);
         if(map_margin.at<uchar>(rand_i,rand_j)>125)
         {
@@ -242,7 +241,7 @@ void set_waypoints()
     while(true)
     {
         int rand_i = ((1+iSize)/2) + std::rand() % (iSize/2);
-        int rand_j = std::rand() % (jSize/2);
+        int rand_j = ((1+jSize)/4) + std::rand() % (jSize/4);
         if(map_margin.at<uchar>(rand_i,rand_j)>125)
         {
           waypoint_candid[2].x = res*(rand_i-map_origin_x);
@@ -254,7 +253,7 @@ void set_waypoints()
     //2th quadrant
     while(true)
     {
-        int rand_i = std::rand() % (iSize/2);
+        int rand_i = ((1+iSize)/4) + std::rand() % (iSize/4);
         int rand_j = std::rand() % (jSize/2);
         if(map_margin.at<uchar>(rand_i,rand_j)>125)
         {
@@ -305,6 +304,7 @@ void generate_path_RRT()
         if (notok) {
             printf("generate RRT failed\n\r");
             valid_path = false;
+	break;
             
         }
         

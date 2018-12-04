@@ -26,6 +26,7 @@ private:
         int idx_parent;
 	    double alpha;
 	    double d;
+	bool has_parent;
     }*root;
 
     int count;

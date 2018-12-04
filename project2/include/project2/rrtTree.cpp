@@ -26,6 +26,7 @@ rrtTree::rrtTree(point x_init, point x_goal) {
     root->rand = x_init;
     root->alpha = 0;
     root->d = 0;
+    root->has_parent = false;
 }
 
 rrtTree::~rrtTree(){
@@ -179,6 +180,8 @@ void rrtTree::addVertex(point x_new, point x_rand, int idx_near, double alpha, d
     	new_vertex -> rand = xRand; 
 	new_vertex -> alpha = alpha;
 	new_vertex -> d = d;
+        new_vertex -> has_parent = false;
+	ptrTable[idx_near] -> has_parent = true;
 
 	count++;	
 }
@@ -448,18 +451,25 @@ bool rrtTree::isCollision(point x_near, point x_new, double d, double a) {
 std::vector<traj> rrtTree::backtracking_traj(int MaxStep){
     int tracked_node;
     traj path_info;
-	bool has_chiled = false;
-	while(!has_chiled) {
+	bool has_grand_chiled = false;
+	int count = 0;
+	while(!has_grand_chiled) {
 		tracked_node = nearestNeighbor(x_goal, MaxStep);
+		if(ptrTable[tracked_node]->has_parent)
 		for(int i = 0; i < count; i++){
-			if(ptrTable[i]->idx_parent = tracked_node) {
-			has_chiled = true;
+			if((ptrTable[i]->idx_parent = tracked_node) && (ptrTable[i]->has_parent)) {
+			has_grand_chiled = true;
 			break;
 			}
 		}
-		if(!has_chiled){
+		if(!has_grand_chiled){
 			ptrTable[tracked_node]->location.x = 10000;
+			count++;
 		}
+		if(count > 100) {
+		break;
+		}
+		
 	}
     std::vector<traj> path;
     while (tracked_node > 0) {
