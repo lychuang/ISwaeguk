@@ -452,11 +452,11 @@ std::vector<traj> rrtTree::backtracking_traj(int MaxStep){
     int tracked_node;
     traj path_info;
 	bool has_grand_chiled = false;
-	int count = 0;
+	int limit_keeper = 0;
 	while(!has_grand_chiled) {
 		tracked_node = nearestNeighbor(x_goal, MaxStep);
 		if(ptrTable[tracked_node]->has_parent)
-		for(int i = 0; i < count; i++){
+		for(int i = 0; i < this->count; i++){
 			if((ptrTable[i]->idx_parent = tracked_node) && (ptrTable[i]->has_parent)) {
 			has_grand_chiled = true;
 			break;
@@ -464,9 +464,9 @@ std::vector<traj> rrtTree::backtracking_traj(int MaxStep){
 		}
 		if(!has_grand_chiled){
 			ptrTable[tracked_node]->location.x = 10000;
-			count++;
+			limit_keeper++;
 		}
-		if(count > 100) {
+		if(limit_keeper > 50) {
 		break;
 		}
 		

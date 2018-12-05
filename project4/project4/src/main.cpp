@@ -35,9 +35,9 @@ PID pid_ctrl;
 int look_ahead_idx;
 //parameters we should adjust : K, margin, MaxStep
 int margin = 6;
-int K = 3000;
-double MaxStep = 10;
-int waypoint_margin = 15;
+int K = 4000;
+double MaxStep = 9;
+int waypoint_margin = 16;
 
 //way points
 std::vector<point> waypoints;
