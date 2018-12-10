@@ -28,14 +28,13 @@ double world_x_min;
 double world_x_max;
 double world_y_min;
 double world_y_max;
-
+int look_ahead_idx;
 
 traj current_point;
 PID pid_ctrl;
-int look_ahead_idx;
 //parameters we should adjust : K, margin, MaxStep
-int margin = 6;
-int K = 4000;
+int margin = 10;
+int K = 5000;
 double MaxStep = 9;
 int waypoint_margin = 16;
 
@@ -122,6 +121,7 @@ int main(int argc, char** argv){
             printf("Initialize ROBOT\n");
             current_point = path_RRT[0];
             state = RUNNING;
+	    look_ahead_idx = 0;
 
         case RUNNING: {
                 //TODO 1
