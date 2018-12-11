@@ -208,6 +208,11 @@ int rrtTree::generateRRT(double x_max, double x_min, double y_max, double y_min,
     for (int i; i <= K; i++) {
         x_rand = randomState(x_max, x_min, y_max, y_min);
         x_near = nearestNeighbor(x_rand, MaxStep);
+
+        if (x_near < 0) {
+            
+            continue;
+        }
         noCollision = newState(out, ptrTable[x_near] -> location, x_rand, MaxStep);	
         
     	if (noCollision) {
@@ -245,7 +250,7 @@ point rrtTree::randomState(double x_max, double x_min, double y_max, double y_mi
 int rrtTree::nearestNeighbor(point x_rand, double MaxStep) {
     double max_th = MaxStep * tan(max_alpha)/L; // if MaxStep is the greatest d can be it should be something like this. and if max_th is the biggest diffrens in th possible.
     double length = 10000;
-    int index;
+    int index = -1;
 
     //printf("point x %f y %f\n\r", x_rand.x, x_rand.y);
 
