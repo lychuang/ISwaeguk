@@ -146,7 +146,10 @@ int main(int argc, char** argv){
             }
             
             if (look_ahead_idx >= path_RRT.size()) { //no more points in path - reached GOAL!
-                printf("Mission 1 done. Starts on Mission 2 now. \n\r");
+		setcmdvel(0,0);
+		cmd_vel_pub.publish(cmd);
+		ros::spinOnce();
+                printf("Mission 1 done. Starts on planing Mission 2 now. \n\r");
                 state = M2_PLAN; //update FSM to finished
 		
             }
