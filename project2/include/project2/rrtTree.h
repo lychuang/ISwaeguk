@@ -26,7 +26,9 @@ private:
         int idx_parent;
 	    double alpha;
 	    double d;
-	bool has_parent;
+	bool has_chiled;
+	bool valid_node;
+	double length;
     }*root;
 
     int count;
@@ -56,4 +58,5 @@ public:
     void visualizeTree(std::vector<traj> path);
     int generateRRT(double x_max, double x_min, double y_max, double y_min, int K, double MaxStep);
     std::vector<traj> backtracking_traj(int MaxStep);
+	int closestandshortest(point p);
 };

@@ -1,7 +1,9 @@
 //state definition
 #define INIT 0
 #define PATH_PLANNING 1
-#define RUNNING 2
+#define RUNNING_M1 2
+#define M2_PLAN 3
+#define RUNNING_M2 4
 #define FINISH -1
 
 #include <unistd.h>
@@ -34,9 +36,9 @@ traj current_point;
 PID pid_ctrl;
 
 //parameters we should adjust : K, margin, MaxStep
-int margin = 2;
-int K = 1000;
-double MaxStep = 9;
+int margin = 5;
+int K = 1500;
+double MaxStep = 7;
 int waypoint_margin = 16;
 
 //way points
@@ -56,7 +58,7 @@ int state;
 void setcmdvel(double v, double w);
 void callback_state(geometry_msgs::PoseWithCovarianceStampedConstPtr msgs);
 void set_waypoints();
-void generate_path_RRT();
+void generate_path_RRT(int start, int finish);
 double dist(point p1, point p2);
 
 int main(int argc, char** argv){
@@ -81,7 +83,7 @@ int main(int argc, char** argv){
             // Load Map
             char* user = getpwuid(getuid())->pw_name;
             cv::Mat map_org = cv::imread((std::string("/home/") + std::string(user) +
-                              std::string("/catkin_ws/src/final_project/src/final.pgm")).c_str(), CV_LOAD_IMAGE_GRAYSCALE);
+                              std::string("/catkin_ws/src/ISwaeguk/final_project/src/final.pgm")).c_str(), CV_LOAD_IMAGE_GRAYSCALE);
 
             cv::transpose(map_org,map);
             cv::flip(map,map,1);
@@ -112,20 +114,58 @@ int main(int argc, char** argv){
             printf("Set way points\n");
 
             // RRT
-            generate_path_RRT();
+            generate_path_RRT(0, 4);
             printf("Generate RRT\n");
 
             ros::spinOnce();
             ros::Rate(0.33).sleep();
 
             printf("Initialize ROBOT\n");
-            state = RUNNING;
             current_point = path_RRT[0];
             look_ahead_idx = 0;
+	    state = RUNNING_M1;
 
-        case RUNNING: {
+        case RUNNING_M1: {
             //TODO 3
             //get current point
+            point curr_point = {current_point.x, current_point.y, current_point.th};
+            
+            //retrieve the next steering angle
+            setcmdvel(1, pid_ctrl.get_control(robot_pose, curr_point));
+            //publish it to robot
+            cmd_vel_pub.publish(cmd);
+            
+            //dist between robot and point is < threshold
+            //move on to next point
+            if(sqrt(pow((robot_pose.x - current_point.x), 2)
+                    + pow((robot_pose.y - current_point.y), 2)) < 0.5) {
+                
+                look_ahead_idx++; //increment index
+                current_point = path_RRT[look_ahead_idx]; //increment current point
+                printf("current goal %d\r\n", look_ahead_idx);
+            }
+            
+            if (look_ahead_idx >= path_RRT.size()) { //no more points in path - reached GOAL!
+                printf("Mission 1 done. Starts on Mission 2 now. \n\r");
+                state = M2_PLAN; //update FSM to finished
+		
+            }
+            
+            //ensure commands get processed immediately
+            ros::spinOnce();
+            
+            //maintain desired frequency of looping
+            control_rate.sleep();
+        } break;
+	case M2_PLAN:{
+	path_RRT.clear();
+	look_ahead_idx = 0;
+	generate_path_RRT(4, (waypoints.size() - 1));
+	current_point = path_RRT[0];
+	state = RUNNING_M2;	
+	}
+	case RUNNING_M2: {
+ 	//get current point
             point curr_point = {current_point.x, current_point.y, current_point.th};
             
             //retrieve the next steering angle
@@ -153,8 +193,8 @@ int main(int argc, char** argv){
             
             //maintain desired frequency of looping
             control_rate.sleep();
-        } break;
-
+		
+	} break;
         case FINISH: {
             setcmdvel(0,0);
             cmd_vel_pub.publish(cmd);
@@ -194,12 +234,12 @@ void set_waypoints()
     // Set your own waypoints.
     // The car should turn around the outer track once, and come back to the starting point.
     // This is an example.
-    waypoint_candid[1].x = 2.2;
-    waypoint_candid[1].y = 8.5;
+    waypoint_candid[1].x = 4.5;
+    waypoint_candid[1].y = 5;
     waypoint_candid[2].x = 2.5;
-    waypoint_candid[2].y = -8.5;
-    waypoint_candid[3].x = -2.5;
-    waypoint_candid[3].y = -8.0;
+    waypoint_candid[2].y = -8.2;
+    waypoint_candid[3].x = -4;
+    waypoint_candid[3].y = -5;
     waypoint_candid[4].x = -3.5;
     waypoint_candid[4].y = 8.5;
 
@@ -220,19 +260,18 @@ void set_waypoints()
     }
 }
 
-void generate_path_RRT()
+void generate_path_RRT(int start, int finish)
 {   
     //TODO 1
     std::vector<traj> one_path;
-    //DEBUG//
-    printf("size waypoints: %d\r\n", static_cast<int>(waypoints.size()));
+
     bool valid_path = true;
-	int path_count = 0;
+    int path_count = 0;
     //create a path between each waypoint
-    for (int i = 0; i + 1 < static_cast<int>(waypoints.size()); i++) {
+    for (int i = start; i < finish; i++) {
 	    
-        valid_path = true;
-    	path_count++;
+        valid_path = false;
+	path_count = 0;
         ///printf("DAFUQ");
         //point curr_point = waypoints[i];
 
@@ -240,7 +279,7 @@ void generate_path_RRT()
         point curr_point = waypoints[i];
         printf("1");
         //fflush(stdout);
-        if (i > 0) {
+        if (i > start) {
             curr_point = {path_RRT[path_RRT.size()-1].x, path_RRT[path_RRT.size()-1].y, path_RRT[path_RRT.size()-1].th};
         }
         //DEBUG// printf("%d\n\r", i);
@@ -249,70 +288,72 @@ void generate_path_RRT()
         //create the rrtTree for the next goal
         //
         point me = waypoints[i+1]; 
-
-        
-        rrtTree tree (curr_point, waypoints[i+1], map, map_origin_x, map_origin_y, res, margin);
-
-        //generate the search tree
-        int notok = tree.generateRRT(world_x_max, world_x_min, world_y_max, world_y_min, K, MaxStep);
-        
-
-        //check if anything was generated
-        if (notok) {
-            printf("generate RRT failed\n\r");
-            valid_path = false;
-	    
-            break;
-        }
-        
-        //generate the path, store it
-        one_path = tree.backtracking_traj(MaxStep);
-        
-        //DEBUG//
-        printf("onepathsize = %d\n\r", static_cast<int>(one_path.size()));
-        if (static_cast<int>(one_path.size()) == 0) {
-            printf("generate path failed. Makes a new path. \n\r");
-            valid_path = false;
-        }
-
-        point last_point = {one_path[0].x, one_path[0].y, one_path[0].th};
-
-        if (dist(last_point, waypoints[i+1]) > 2.5) {
-            valid_path = false;
-            printf("generate path failed. Makes a new path. \n\r");
-        }
-        
-        //add the path to the overall path
-	    if(valid_path){
-		    for (int j = static_cast<int>(one_path.size()) - 1; j >= 0; j--) {
-
-		        path_RRT.push_back(one_path[j]);
-		    }
-	    
-            path_count = 0;
 	
-        } else {
+        rrtTree tree (curr_point, waypoints[i+1], map, map_origin_x, map_origin_y, res, margin);
+        //generate the search tree
+	while(!valid_path) {
+		path_count++;
+		valid_path = true;
+		int notok = tree.generateRRT(world_x_max, world_x_min, world_y_max, world_y_min, K, MaxStep);
+		//check if anything was generated
+		if (notok) {
+		    printf("generate RRT failed\n\r");
+		    valid_path = false;
+		    
+		    break;
+		}
+		
+		//generate the path, store it
+		one_path = tree.backtracking_traj(MaxStep);
+		
+		//DEBUG//
+		printf("onepathsize = %d\n\r", static_cast<int>(one_path.size()));
+		if (static_cast<int>(one_path.size()) == 0) {
+		    printf("generate path failed. Makes a new path. \n\r");
+		    valid_path = false;
+		}
 
-            one_path.clear();
-            i--;
-        }
+		point last_point = {one_path[0].x, one_path[0].y, one_path[0].th};
 
-        if (path_count == 3) {
-	        break;
- 
-	        one_path.clear();
-    	}
+		if (dist(last_point, waypoints[i+1]) > 2) {
+		    valid_path = false;
+		    printf("generate path failed. Makes a new path. \n\r");
+		}
+		
+		//add the path to the overall path
+		    if(valid_path){
+			    for (int j = static_cast<int>(one_path.size()) - 1; j >= 0; j--) {
+
+				path_RRT.push_back(one_path[j]);
+			    }
+		    
+		    path_count = 0;
+	
+		} else {
+			one_path.clear();
+		}
+
+		if (path_count == 3) {
+			break;
+	 
+			one_path.clear();
+	    	}
+	}
+	if (valid_path == false) {
+			break;
+	}
         
         //ensure the next path is aware of car's current heading direction
         waypoints[i+1].th = path_RRT[path_RRT.size()-1].th;
 
     	tree.visualizeTree(path_RRT);
 	    sleep(5);
-    }
+    }	
+	
 
     if(!valid_path) {
         path_RRT.clear();
-        generate_path_RRT();
+        generate_path_RRT(start, finish);
     }
 }
 

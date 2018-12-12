@@ -26,7 +26,9 @@ rrtTree::rrtTree(point x_init, point x_goal) {
     root->rand = x_init;
     root->alpha = 0;
     root->d = 0;
-    root->has_parent = false;
+    root->has_chiled = false;
+    root->valid_node = true;
+    root->length = 0;
 }
 
 rrtTree::~rrtTree(){
@@ -52,6 +54,10 @@ rrtTree::rrtTree(point x_init, point x_goal, cv::Mat map, double map_origin_x, d
     root->idx_parent = NULL;
     root->location = x_init;
     root->rand = x_init;
+    root->has_chiled = false;
+    root->valid_node = true;
+    root->length = 0;
+
 }
 
 cv::Mat rrtTree::addMargin(cv::Mat map, int margin) {
@@ -169,7 +175,6 @@ void rrtTree::visualizeTree(std::vector<traj> path){
 
 
 void rrtTree::addVertex(point x_new, point x_rand, int idx_near, double alpha, double d) {
-
 	point xNew = x_new;
 	point xRand = x_rand;
  	node* new_vertex = new node;
@@ -180,8 +185,11 @@ void rrtTree::addVertex(point x_new, point x_rand, int idx_near, double alpha, d
     	new_vertex -> rand = xRand; 
 	new_vertex -> alpha = alpha;
 	new_vertex -> d = d;
-        new_vertex -> has_parent = false;
-	ptrTable[idx_near] -> has_parent = true;
+        new_vertex -> has_chiled = false;
+	new_vertex -> valid_node = true;
+	new_vertex -> length = (ptrTable[idx_near]->length) + d;
+	ptrTable[idx_near] -> has_chiled = true;
+	
 
 	count++;	
 }
@@ -205,14 +213,13 @@ int rrtTree::generateRRT(double x_max, double x_min, double y_max, double y_min,
 
     int noCollision;
 	srand(time(NULL));
-    for (int i; i <= K; i++) {
+    for (int i = 0; i <= K; i++) {
         x_rand = randomState(x_max, x_min, y_max, y_min);
         x_near = nearestNeighbor(x_rand, MaxStep);
-
-        if (x_near < 0) {
-            
-            continue;
-        }
+	if (x_near < 0 || x_near >= count){
+		continue;
+	}
+        
         noCollision = newState(out, ptrTable[x_near] -> location, x_rand, MaxStep);	
         
     	if (noCollision) {
@@ -250,7 +257,7 @@ point rrtTree::randomState(double x_max, double x_min, double y_max, double y_mi
 int rrtTree::nearestNeighbor(point x_rand, double MaxStep) {
     double max_th = MaxStep * tan(max_alpha)/L; // if MaxStep is the greatest d can be it should be something like this. and if max_th is the biggest diffrens in th possible.
     double length = 10000;
-    int index = -1;
+    int index = 0;
 
     //printf("point x %f y %f\n\r", x_rand.x, x_rand.y);
 
@@ -263,11 +270,10 @@ int rrtTree::nearestNeighbor(point x_rand, double MaxStep) {
 					                , ptrTable[i]->location.x - x_rand.x);
 	    double distance = dist(x_rand, ptrTable[i] -> location);
 	
-	    if ((distance < length) && ((ptrTable[i]->location.th - theta_rand) < max_th) 
-		    && ((ptrTable[i]->location.th - theta_rand) > -max_th)) {
+	    if ((distance < length) && ((ptrTable[i]->location.th - theta_rand) < max_th) && (ptrTable[i]->valid_node) && ((ptrTable[i]->location.th - theta_rand) > -max_th)) {
 
 	        length = distance;
-	        index = ptrTable[i] -> idx;
+	        index = i;
             //printf("here\n\r");
 	    }
     }
@@ -279,15 +285,15 @@ int rrtTree::nearestNeighbor(point x_rand, double MaxStep) {
 int rrtTree::nearestNeighbor(point x_rand) {
 
     double length = 10000;
-    int index;
+    int index = 0;
 
     for (int i = 0; i < count; i++) {
 
 	double distance = dist(x_rand, ptrTable[i]->location);
 
-	if (distance < length) {
+	if ((distance < length) and (ptrTable[i]->valid_node)) {
 	    length = distance; 
-	    index = ptrTable[i]->idx;
+	    index = i;
 	}
     }
     return index;
@@ -321,9 +327,9 @@ int rrtTree::newState(double *out, point x_near, point x_rand, double MaxStep) {
     	double alph = max_alpha - (i * max_alpha / 10);
 
 	//for each angle test 10 lengths less than or equal to MaxStep
-        for (int i = 0; i < 10; i++) {
+        for (int k = 0; k < 10; k++) {
 	    
-	        double d = MaxStep - (i * MaxStep / 10);
+	        double d = MaxStep - (k * MaxStep / 10);
 	    
 	        double R = L / tan(alph);
  
@@ -460,15 +466,15 @@ std::vector<traj> rrtTree::backtracking_traj(int MaxStep){
 	int limit_keeper = 0;
 	while(!has_grand_chiled) {
 		tracked_node = nearestNeighbor(x_goal, MaxStep);
-		if(ptrTable[tracked_node]->has_parent)
+		if(ptrTable[tracked_node]->has_chiled)
 		for(int i = 0; i < this->count; i++){
-			if((ptrTable[i]->idx_parent = tracked_node) && (ptrTable[i]->has_parent)) {
+			if((ptrTable[i]->idx_parent == tracked_node) && (ptrTable[i]->has_chiled)) {
 			has_grand_chiled = true;
 			break;
 			}
 		}
 		if(!has_grand_chiled){
-			ptrTable[tracked_node]->location.x = 10000;
+			ptrTable[tracked_node]->valid_node = false;
 			limit_keeper++;
 		}
 		if(limit_keeper > 50) {
@@ -488,4 +494,18 @@ std::vector<traj> rrtTree::backtracking_traj(int MaxStep){
         path.push_back(path_info);
     }
     return path;
+}
+
+int rrtTree::closestandshortest(point p) {
+	int index;
+	index = nearestNeighbor(p);
+	double distance = dist(p, ptrTable[index]->location);
+	distance = distance + 1;
+	//find the one in a arbitrary radius of the goal point that has the shortes way to it.
+	for(int i = 0; i < count; i++){
+		if((dist((ptrTable[i]->location), p) < distance) and ((ptrTable[i]->length) < ptrTable[index]->length) and (ptrTable[i]->valid_node)) {
+			index = i;
+		}
+	}
+	return index;
 }
