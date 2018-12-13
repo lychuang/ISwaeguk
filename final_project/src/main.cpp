@@ -138,7 +138,7 @@ int main(int argc, char** argv){
             //dist between robot and point is < threshold
             //move on to next point
             if(sqrt(pow((robot_pose.x - current_point.x), 2)
-                    + pow((robot_pose.y - current_point.y), 2)) < 0.5) {
+                    + pow((robot_pose.y - current_point.y), 2)) < 0.4) {
                 
                 look_ahead_idx++; //increment index
                 current_point = path_RRT[look_ahead_idx]; //increment current point
@@ -179,7 +179,7 @@ int main(int argc, char** argv){
             //dist between robot and point is < threshold
             //move on to next point
             if(sqrt(pow((robot_pose.x - current_point.x), 2)
-                    + pow((robot_pose.y - current_point.y), 2)) < 0.5) {
+                    + pow((robot_pose.y - current_point.y), 2)) < 0.4) {
                 
                 look_ahead_idx++; //increment index
                 current_point = path_RRT[look_ahead_idx]; //increment current point
@@ -242,8 +242,8 @@ void set_waypoints()
     waypoint_candid[2].y = -8.2;
     waypoint_candid[3].x = -4;
     waypoint_candid[3].y = -5;
-    waypoint_candid[4].x = -2;
-    waypoint_candid[4].y = 8.5;
+    waypoint_candid[4].x = -2.2;
+    waypoint_candid[4].y = 8.2;
 
 
     // Waypoints for arbitrary goal points.

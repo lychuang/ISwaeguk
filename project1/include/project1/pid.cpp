@@ -12,9 +12,9 @@ PID::PID(){
 	error_sum = 0;
 	error_diff = 0;
 	// this is just to try some values and show how it is suposed to look like
-	Ki = 0.0;
-	Kp = 0.9;
-	Kd = 0.0;
+	Ki = 0;
+	Kp = 1.5;
+	Kd = 0.01;
 
 }
 
