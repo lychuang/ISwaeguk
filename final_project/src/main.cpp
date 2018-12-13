@@ -131,7 +131,7 @@ int main(int argc, char** argv){
             point curr_point = {current_point.x, current_point.y, current_point.th};
             
             //retrieve the next steering angle
-            setcmdvel(1, pid_ctrl.get_control(robot_pose, curr_point));
+            setcmdvel(1.1, pid_ctrl.get_control(robot_pose, curr_point));
             //publish it to robot
             cmd_vel_pub.publish(cmd);
             
@@ -172,7 +172,7 @@ int main(int argc, char** argv){
             point curr_point = {current_point.x, current_point.y, current_point.th};
             
             //retrieve the next steering angle
-            setcmdvel(1, pid_ctrl.get_control(robot_pose, curr_point));
+            setcmdvel(1.1, pid_ctrl.get_control(robot_pose, curr_point));
             //publish it to robot
             cmd_vel_pub.publish(cmd);
             
@@ -236,14 +236,13 @@ void set_waypoints()
     //TODO 2
     // Set your own waypoints.
     // The car should turn around the outer track once, and come back to the starting point.
-    // This is an example.
     waypoint_candid[1].x = 4.5;
     waypoint_candid[1].y = 5;
     waypoint_candid[2].x = 2.5;
     waypoint_candid[2].y = -8.2;
     waypoint_candid[3].x = -4;
     waypoint_candid[3].y = -5;
-    waypoint_candid[4].x = -3.5;
+    waypoint_candid[4].x = -2;
     waypoint_candid[4].y = 8.5;
 
 
@@ -315,12 +314,13 @@ void generate_path_RRT(int start, int finish)
 		    printf("generate path failed. Makes a new path. \n\r");
 		    valid_path = false;
 		}
+		if(valid_path) {
+			point last_point = {one_path[0].x, one_path[0].y, one_path[0].th};
 
-		point last_point = {one_path[0].x, one_path[0].y, one_path[0].th};
-
-		if (dist(last_point, waypoints[i+1]) > 2) {
-		    valid_path = false;
-		    printf("generate path failed. Makes a new path. \n\r");
+			if (dist(last_point, waypoints[i+1]) > 2) {
+			    valid_path = false;
+			    printf("generate path failed. Makes a new path. \n\r");
+			}
 		}
 		
 		//add the path to the overall path
@@ -346,8 +346,7 @@ void generate_path_RRT(int start, int finish)
 			break;
 	}
         
-        //ensure the next path is aware of car's current heading direction
-        waypoints[i+1].th = path_RRT[path_RRT.size()-1].th;
+       
 
     	tree.visualizeTree(path_RRT);
 	    sleep(5);
