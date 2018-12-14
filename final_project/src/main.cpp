@@ -38,7 +38,7 @@ PID pid_ctrl;
 //parameters we should adjust : K, margin, MaxStep
 int margin = 6;
 int K = 2000;
-double MaxStep = 6;
+double MaxStep = 5;
 int waypoint_margin = 16;
 
 //way points
