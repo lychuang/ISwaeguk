@@ -36,9 +36,9 @@ traj current_point;
 PID pid_ctrl;
 
 //parameters we should adjust : K, margin, MaxStep
-int margin = 5;
-int K = 1500;
-double MaxStep = 7;
+int margin = 6;
+int K = 2000;
+double MaxStep = 6;
 int waypoint_margin = 16;
 
 //way points
@@ -83,7 +83,7 @@ int main(int argc, char** argv){
             // Load Map
             char* user = getpwuid(getuid())->pw_name;
             cv::Mat map_org = cv::imread((std::string("/home/") + std::string(user) +
-                              std::string("/catkin_ws/src/ISwaeguk/final_project/src/final.pgm")).c_str(), CV_LOAD_IMAGE_GRAYSCALE);
+                              std::string("/catkin_ws/src/final_project/src/final.pgm")).c_str(), CV_LOAD_IMAGE_GRAYSCALE);
 
             cv::transpose(map_org,map);
             cv::flip(map,map,1);
@@ -138,7 +138,7 @@ int main(int argc, char** argv){
             //dist between robot and point is < threshold
             //move on to next point
             if(sqrt(pow((robot_pose.x - current_point.x), 2)
-                    + pow((robot_pose.y - current_point.y), 2)) < 0.4) {
+                    + pow((robot_pose.y - current_point.y), 2)) < 0.5) {
                 
                 look_ahead_idx++; //increment index
                 current_point = path_RRT[look_ahead_idx]; //increment current point
@@ -179,7 +179,7 @@ int main(int argc, char** argv){
             //dist between robot and point is < threshold
             //move on to next point
             if(sqrt(pow((robot_pose.x - current_point.x), 2)
-                    + pow((robot_pose.y - current_point.y), 2)) < 0.4) {
+                    + pow((robot_pose.y - current_point.y), 2)) < 0.5) {
                 
                 look_ahead_idx++; //increment index
                 current_point = path_RRT[look_ahead_idx]; //increment current point
@@ -317,7 +317,7 @@ void generate_path_RRT(int start, int finish)
 		if(valid_path) {
 			point last_point = {one_path[0].x, one_path[0].y, one_path[0].th};
 
-			if (dist(last_point, waypoints[i+1]) > 2) {
+			if (dist(last_point, waypoints[i+1]) > 1.7) {
 			    valid_path = false;
 			    printf("generate path failed. Makes a new path. \n\r");
 			}
